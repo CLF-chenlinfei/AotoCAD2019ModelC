@@ -24,6 +24,7 @@
 //-----------------------------------------------------------------------------
 #include "StdAfx.h"
 #include "resource.h"
+#include "Commands.h"
 
 //-----------------------------------------------------------------------------
 #define szRDS _RXST("CLF")
@@ -42,6 +43,7 @@ public:
 		AcRx::AppRetCode retCode =AcRxArxApp::On_kInitAppMsg (pkt) ;
 		
 		// TODO: Add your initialization code here
+		AddCommands();
 
 		return (retCode) ;
 	}

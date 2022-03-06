@@ -72,6 +72,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+      <SmallerTypeCheck Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</SmallerTypeCheck>
     </ClCompile>
     <Link>
     </Link>
@@ -82,8 +83,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="acrxEntryPoint.cpp" />
+    <ClCompile Include="alg.cpp" />
     <ClCompile Include="AotoCAD2019ModelC.cpp" />
+    <ClCompile Include="Commands.cpp" />
+    <ClCompile Include="CreateSome.cpp" />
+    <ClCompile Include="Database.cpp" />
     <ClCompile Include="DocData.cpp" />
+    <ClCompile Include="Editor.cpp" />
+    <ClCompile Include="inspection.cpp" />
+    <ClCompile Include="name.cpp" />
     <ClCompile Include="StdAfx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -92,7 +100,14 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="alg.h" />
+    <ClInclude Include="Commands.h" />
+    <ClInclude Include="CreateSome.h" />
+    <ClInclude Include="Database.h" />
     <ClInclude Include="DocData.h" />
+    <ClInclude Include="Editor.h" />
+    <ClInclude Include="inspection.h" />
+    <ClInclude Include="name.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="StdAfx.h" />
   </ItemGroup>
