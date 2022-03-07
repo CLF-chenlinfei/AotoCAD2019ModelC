@@ -15,7 +15,7 @@ public:
 		workingDatabase());
 };
 void CText(const AcGePoint3d& ptInsert, const ACHAR* text
-	, AcDbObjectId style = AcDbObjectId::kNull, double height = 30, double width = 5000);
+	, int fx, AcDbObjectId style = AcDbObjectId::kNull, double height = 30, double width = 5000);
 
 void CreateBox(AcGePoint3d& cp, int le, int col);
 //»­¼ýÍ·

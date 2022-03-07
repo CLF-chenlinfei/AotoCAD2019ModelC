@@ -63,6 +63,23 @@ AcDbEntity *Editor::selectEntity(AcDbObjectId &eId, AcDb::OpenMode openMode)
 	return pEnt;
 }
 
+void eascEnt()
+{
+
+}
+//AcDbEntity *pEnty = NULL;
+//Acad::ErrorStatus es;
+//int j;
+//for (j = 0; j < arrIds.length(); j++)
+//{
+//	undefined
+//		es = acdbOpenObject(pEnty, arrIds.at(j), AcDb::kForWrite);
+//	if (Acad::eOk == es)
+//	{
+//		undefined
+//			pEnty->erase();  //删除组中包含的实体
+//		pEnty->close();
+
 void Rotate(AcDbObjectId entId, const AcGePoint3d &ptBase, double rotation, AcGeVector3d vec)
 {
 	//几何变换矩陈

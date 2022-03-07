@@ -71,6 +71,43 @@ AcDbObjectId Database::PostToModelSpace(AcDbEntity *pEnt, AcDbDatabase *pDb)
 	return outId;
 }
 
+void Database::deleteLayer(const ACHAR *layer, AcDbDatabase *pDb)
+{
+	AcDbLayerTable *pLayerTbl = NULL;
+	Acad::ErrorStatus es;
+	pDb->getLayerTable(pLayerTbl, AcDb::kForWrite);
+	AcDbObjectId layerId;
+	es = pLayerTbl->getAt(layer, layerId);
+	if (Acad::eOk == es)
+	{
+		pLayerTbl->close();
+	}
+	//AcDbGroup *pGroup = NULL;
+	
+	// 获取数据库块表->数据库块表记录->关闭块表
+	AcDbBlockTable *pBlkTbl = NULL;
+	pDb->getBlockTable(pBlkTbl, AcDb::kForRead);
+	AcDbBlockTableRecord *pBlkTblRcd = NULL;
+	pBlkTbl->getAt(ACDB_MODEL_SPACE, pBlkTblRcd, AcDb::kForRead);
+	pBlkTbl->close();
+	// 遍历数据库块表记录
+	AcDbBlockTableRecordIterator *pItr = NULL;
+	pBlkTblRcd->newIterator(pItr);
+	for (pItr->start(); !pItr->done(); pItr->step())
+	{
+		AcDbEntity *pEnt;
+		pItr->getEntity(pEnt, AcDb::kForWrite);
+		// 如果实体的图层为指定过滤的图层
+		if (pEnt->layerId() == layerId)
+		{
+			//acutPrintf(_T("\n:%d"), pEnt->objectId());
+			pEnt->erase();
+		}
+		pEnt->close();
+	}
+	delete pItr;
+	pBlkTblRcd->close();
+}
 // 获取层上所有实体：图层名(默认为空)、数据库对象
 AcDbObjectIdArray Database::GetAllEntIds(const ACHAR *layer, AcDbDatabase *pDb)
 {
@@ -109,11 +146,24 @@ AcDbObjectIdArray Database::GetAllEntIds(const ACHAR *layer, AcDbDatabase *pDb)
 		if (bFilterLayer == true)
 		{	// 获得每个实体的指针
 			AcDbEntity *pEnt;
+			AcDbEntity *pEnty;
 			pItr->getEntity(pEnt, AcDb::kForRead);
 			// 如果实体的图层为指定过滤的图层
 			if (pEnt->layerId() == layerId)
 			{	// 将实体id添加进id列表 entIds 中
 				entIds.append(pEnt->objectId());
+				acutPrintf(_T("\n %d:id"), pEnt->objectId());
+				Acad::ErrorStatus es;
+				es = acdbOpenObject(pEnty, pEnt->objectId(), AcDb::kForWrite);
+				if (Acad::eOk == es)
+				{
+					pEnty->erase();  //删除组中包含的实体
+					pEnty->close();
+				}
+				else
+				{
+					pEnty->close();
+				}
 			}
 			pEnt->close();
 		}
@@ -171,12 +221,15 @@ void Database::GetModelSpaceExtent(AcDbDatabase *pDb)
 			tempdt.minp = pex.minPoint();
 			tempdt.maxp = pex.maxPoint();
 			tempdt.id = objId;
+			//acutPrintf(_T("\n: %d"), tempdt.id);
 			tempdt.Layer = model_layer;
 			tempdt.Type = model_type;
 			tempdt.volume = (pex.maxPoint().x - pex.minPoint().x)*(pex.maxPoint().y - pex.minPoint().y)*(pex.maxPoint().z - pex.minPoint().z);
 			tempdt.center = (AcGePoint3d((pex.maxPoint().x + pex.minPoint().x) / 2, (pex.maxPoint().y + pex.minPoint().y) / 2, (pex.maxPoint().z + pex.minPoint().z) / 2));
 			//MydataR.push_back(tempdt);
-			if (tempdt.Type != "AcDbLine")
+			if (tempdt.Type != "AcDbLine"&&
+				tempdt.Type != "AcDbMText"&&
+				tempdt.Type != "AcDbZombieEntity")
 			{
 				MydataR.push_back(tempdt);
 			}

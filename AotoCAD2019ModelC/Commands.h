@@ -4,3 +4,6 @@
 void AddCommands();
 
 void CreateLine();
+
+// É¾³ı0ºÅÍ¼²ãÊµÌå
+void remove0();

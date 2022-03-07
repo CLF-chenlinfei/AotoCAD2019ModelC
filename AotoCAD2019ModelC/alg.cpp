@@ -1,10 +1,113 @@
 #include "StdAfx.h"
 #include "alg.h"
 #include "name.h"
+#include <vector>
+#include <tchar.h>
+#include <algorithm>
+#include "CreateSome.h"
+
+// 最大板件
+bool maxbord(const EntBox &p1)
+{
+	double x = abs(p1.maxp.x - p1.minp.x) < 2800;
+	double y = abs(p1.maxp.y - p1.minp.y) < 2800;
+	double z = abs(p1.maxp.z - p1.minp.z) < 2800;
+	if (x&&y&&z) return true;
+	return false;
+}
+
+// 盒子相交2 这个是全面的
+bool BoxIntersectBox(const EntBox &b1, const EntBox &b2, double pz)
+{
+	// 创建三个面域p1
+	recmo p1xy = { b1.minp.x, b1.minp.y, b1.maxp.x, b1.maxp.y };
+	recmo p2xy = { b2.minp.x, b2.minp.y, b2.maxp.x, b2.maxp.y };
+	// zy
+	recmo p1zy = { b1.minp.z, b1.minp.y, b1.maxp.z, b1.maxp.y };
+	recmo p2zy = { b2.minp.z, b2.minp.y, b2.maxp.z, b2.maxp.y };
+	// zx
+	recmo p1zx = { b1.minp.z, b1.minp.x, b1.maxp.z, b1.maxp.x };
+	recmo p2zx = { b2.minp.z, b2.minp.x, b2.maxp.z, b2.maxp.x };
+
+	if (MandM(p1xy, p2xy, pz) && MandM(p1zx, p2zx, pz) && MandM(p1zy, p2zy, pz))return true;
+	return false;
+	// 检查三个面域是否相交
+}
+//点与包围盒相切
+bool PointBoxTangency(const AcGePoint3d &p1, const EntBox &box, double expand)
+{
+	//点位是否与盒子相切
+	//分正反面
+	if (
+		((p1.x >= box.minp.x&&p1.x <= box.maxp.x&&p1.z <= box.maxp.z&&p1.z >= box.minp.z) && (abs(p1.y - box.maxp.y) < expand || abs(p1.y - box.minp.y) < expand)) ||
+		((p1.y >= box.minp.y&&p1.y <= box.maxp.y&&p1.z <= box.maxp.z&&p1.z >= box.minp.z) && (abs(p1.x - box.maxp.x) < expand || abs(p1.x - box.minp.x) < expand)) ||
+		((p1.x >= box.minp.x&&p1.x <= box.maxp.x&&p1.y <= box.maxp.y&&p1.y >= box.minp.y) && (abs(p1.z - box.maxp.z) < expand || abs(p1.z - box.minp.z) < expand))
+		)return true;
+	return false;
+}
+
+// 盒子相切
+bool BoxTangencyBox(const EntBox &b1, const EntBox &b2)
+{
+	bool p1b = false;
+	bool p2b = false;
+	bool p3b = false;
+	bool p4b = false;
+
+	if (PointBoxTangency(b1.minp, b2))
+	{
+		p1b = true;
+	}
+	if (PointBoxTangency(b1.maxp, b2))
+	{
+		p2b = true;
+	}
+	if (PointBoxTangency(b2.minp, b1))
+	{
+		p3b = true;
+	}
+	if (PointBoxTangency(b2.maxp, b1))
+	{
+		p4b = true;
+	}
+
+	if (p1b || p2b || p3b || p4b) return true;
+	return false;
+}
+// 指定长宽2
+bool FiltrationEnt(const EntBox &p1, int d1, int d2)
+{
+	// 两边距离接近 小于0.1 返回ture else 0
+	double s1 = abs(p1.maxp.x - p1.minp.x);
+	double s2 = abs(p1.maxp.y - p1.minp.y);
+
+	if ((abs(s1 - d1) < 0.1&& abs(s2 - d2) < 0.1)
+		|| (abs(s2 - d1) < 0.1&& abs(s1 - d2) < 0.1))
+		return true;
+	return false;
 
 
+}
+//点在包围盒内
+bool PointInBoxTangency(const AcGePoint3d &p1, const EntBox &box)
+{
+
+	if (
+		box.minp.x < p1.x&&p1.x < box.maxp.x&&
+		box.minp.y < p1.y&&p1.y < box.maxp.y&&
+		box.minp.z < p1.z&&p1.z < box.maxp.z
+		)return true;
+	return false;
+
+}
+// 点在面域内
+bool PointInRec(double x, double y, recmo rec)
+{
+	if (rec.x1<x&&rec.x11>x&&rec.y2<y&&rec.y22>y) return true;
+	return false;
+}
 // 检查xy 顶面方向 板件有一项符合标准
-bool dec_xy(EntBox &p1)
+bool dec_xy(const EntBox &p1)
 {
 	// 检查xy 顶面方向 板件有一项符合标准
 	double xx = p1.maxp.x - p1.minp.x;
@@ -44,7 +147,7 @@ bool Doublebj(double n1, double n2)
 }
 
 // 两边大于某数
-bool bigfun2c(EntBox &p1, int wd)
+bool bigfun2c(const EntBox &p1, int wd)
 {
 	// 两边大于某数
 	bool x = round(p1.maxp.x - p1.minp.x) > wd;
@@ -56,7 +159,7 @@ bool bigfun2c(EntBox &p1, int wd)
 }
 
 // 三边大于某数
-bool bigfun3c(EntBox &p1, int wd)
+bool bigfun3c(const EntBox &p1, int wd)
 {
 	// 两边大于某数
 	bool x = round(p1.maxp.x - p1.minp.x) > wd;
@@ -68,7 +171,7 @@ bool bigfun3c(EntBox &p1, int wd)
 }
 
 // 1边大于某数
-bool bigfun1c(EntBox &p1, int wd)
+bool bigfun1c(const EntBox &p1, int wd)
 {
 	// 两边大于某数
 	bool x = round(p1.maxp.x - p1.minp.x) > wd;
@@ -80,10 +183,10 @@ bool bigfun1c(EntBox &p1, int wd)
 }
 
 // 非门板的 大于60*299 的板件
-bool gsst(EntBox &p1)
+bool gsst(const EntBox &p1)
 {
 
-	bool a1 = bigfun1c(p1, 299);
+	bool a1 = bigfun1c(p1, 249);
 	bool a2 = bigfun2c(p1, 61);
 	bool a3 = bigfun3c(p1, 17);
 	if (a1&&a2&&a3&&p1.Layer != Layer_wjls && 
@@ -92,7 +195,7 @@ bool gsst(EntBox &p1)
 
 }
 // 包含门板 大于60*299 的板件
-bool gsdoor(EntBox &p1)
+bool gsdoor(const EntBox &p1)
 {
 
 	bool a1 = bigfun1c(p1, 299);
@@ -103,7 +206,7 @@ bool gsdoor(EntBox &p1)
 }
 // 用于干涉检测的门板判断
 // 包含门板 大于60*299 的板件
-bool isdoor(EntBox &p1)
+bool isdoor(const EntBox &p1)
 {
 
 	bool a1 = bigfun1c(p1, 299);
@@ -113,7 +216,7 @@ bool isdoor(EntBox &p1)
 	return false;
 }
 // 膨胀实体
-EntBox ExspansionEnt(EntBox &p1, double greater)
+EntBox ExspansionEnt(const EntBox &p1, double greater)
 {
 	// 注意体积未膨胀，可以用大小点计算
 	EntBox newdata;
@@ -147,7 +250,7 @@ bool MandM(recmo &m1, recmo &m2, double pz)
 }
 //
 //// 盒子相交2 这个是全面的
-bool BoxIntersectBox2(EntBox &b1, EntBox &b2, double pz)
+bool BoxIntersectBox2(const EntBox &b1, const EntBox &b2, double pz)
 {
 	// 创建三个面域p1
 	recmo p1xy = { b1.minp.x, b1.minp.y, b1.maxp.x, b1.maxp.y };
@@ -166,7 +269,7 @@ bool BoxIntersectBox2(EntBox &b1, EntBox &b2, double pz)
 	// 检查三个面域是否相交
 }
 //
-bool pointdpoint(AcGePoint3d p1, AcGePoint3d p2)
+bool pointdpoint(const AcGePoint3d p1, const AcGePoint3d p2)
 {
 	bool x = DoubleEq(p1.x, p2.x);
 	bool y = DoubleEq(p1.y, p2.y);
@@ -176,7 +279,7 @@ bool pointdpoint(AcGePoint3d p1, AcGePoint3d p2)
 }
 //
 // 判断点位重叠
-bool judeMore(EntBox &p1, EntBox &p2)
+bool judeMore(const EntBox &p1, const EntBox &p2)
 {
 	// 判断p1,p2 是孔位
 	bool p1isHole = isHole(p1);
@@ -191,7 +294,7 @@ bool judeMore(EntBox &p1, EntBox &p2)
 	return false;
 }
 //// 是灯槽
-bool isLamp(EntBox &p1)
+bool isLamp(const EntBox &p1)
 {
 
 	if (p1.Layer == Layer_wjls && p1.Type == Solid)
@@ -213,7 +316,7 @@ bool isLamp(EntBox &p1)
 	return false;
 }
 //// 是孔位
-bool isHole(EntBox &p1)
+bool isHole(const EntBox &p1)
 {
 
 
@@ -222,7 +325,7 @@ bool isHole(EntBox &p1)
 
 }
 // 板件相交
-bool Intervene(EntBox &p1, EntBox &p2)
+bool Intervene(const EntBox &p1, const EntBox &p2)
 {
 	if (BoxIntersectBox2(p1, p2, -1.0) && gsst(p1) && gsst(p2) &&
 		!EquaPoint(p1.maxp, p2.maxp) && p1.id != p2.id)
@@ -231,7 +334,7 @@ bool Intervene(EntBox &p1, EntBox &p2)
 }
 
 // 门，板件相交
-bool DoorBIntervene(EntBox &p1, EntBox &p2)
+bool DoorBIntervene(const EntBox &p1, const EntBox &p2)
 {
 	if (BoxIntersectBox2(p1, p2, -6.0) && gsdoor(p1) && gsdoor(p2) &&
 		!EquaPoint(p1.maxp, p2.maxp) && p1.id != p2.id)
@@ -240,11 +343,244 @@ bool DoorBIntervene(EntBox &p1, EntBox &p2)
 }
 
 // 门板相交
-bool DoorIntervene(EntBox &p1, EntBox &p2)
+bool DoorIntervene(const EntBox &p1, const EntBox &p2)
 {
 	if (BoxIntersectBox2(p1, p2, 3.0) && isdoor(p1) && isdoor(p2) &&
 		!EquaPoint(p1.maxp, p2.maxp) && p1.id != p2.id
 		&& dec_xy(p1) && dec_xy(p2))
 		return true;
 	return false;
+}
+// 多背板
+bool isbb(const EntBox &p1)
+{
+	bool a1 = bigfun1c(p1, 399);
+	bool a2 = bigfun2c(p1, 200);
+	bool a3 = bigfun3c(p1, 8);
+	if (a1&&a2&&a3)return true;
+	return false;
+
+}
+// 检查方向 1 y 方向 2 x 方向
+int decXYZ(const EntBox &p1)
+{
+	if (round(p1.maxp.x - p1.minp.x) == 18 || round(p1.maxp.x - p1.minp.x) == 9)return 1;
+	if (round(p1.maxp.y - p1.minp.y) == 18 || round(p1.maxp.y - p1.minp.y) == 9)return 2;
+	if (round(p1.maxp.z - p1.minp.z) == 18 || round(p1.maxp.z - p1.minp.z) == 9)return 3;
+	return 0;
+
+
+}
+
+// 背板膨胀 当他平行X轴 分别是Z 和X 变大
+EntBox ExpandBack(const EntBox &p1, int xs, int more)
+{
+	EntBox pp;
+	pp = p1;
+	if (xs==2)
+	{
+		pp.maxp = AcGePoint3d(p1.maxp.x+more, p1.maxp.y, p1.maxp.z+more);
+		pp.minp = AcGePoint3d(p1.minp.x-more, p1.minp.y, p1.minp.z-more);
+	}
+	else
+	{
+		pp.maxp = AcGePoint3d(p1.maxp.x, p1.maxp.y+more, p1.maxp.z+more);
+		pp.minp = AcGePoint3d(p1.minp.x, p1.minp.y-more, p1.minp.z-more);
+	}
+	return pp;
+}
+
+bool MoreBack(const EntBox &p1, const EntBox &p2, std::vector<EntBox> &adlist)
+{
+	// 找到两块背板重叠
+	//std::vector<EntBox> MydataR;
+	if (isbb(p1) && isbb(p2))
+	{
+		//x 方向18
+		if (decXYZ(p1) == 1 && decXYZ(p2) == 1)
+		{
+			recmo reccc;
+				reccc.x1 = p2.minp.y;
+				reccc.y2 = p2.minp.z;
+				reccc.x11 = p2.maxp.y;
+				reccc.y22 = p2.maxp.z;
+				if (PointInRec(p1.center.y, p1.center.z, reccc) && p1.id != p2.id&&
+					abs(p1.center.x - p2.center.x) < 100)
+				{
+					std::vector<AcDbObjectId> ls;
+					for (int ss = 0; ss < adlist.size(); ss++)
+					{
+						if ((BoxIntersectBox2(ExpandBack(p1, 1, 3), adlist[ss], -0.5) && gsst(adlist[ss]) && adlist[ss].id != p1.id&&adlist[ss].id != p2.id))
+						{
+							ls.push_back(adlist[ss].id);
+							
+						}
+						if ((BoxIntersectBox2(ExpandBack(p2, 1, 3), adlist[ss], -0.5) && gsst(adlist[ss]) && adlist[ss].id != p1.id&&adlist[ss].id != p2.id))
+						{
+							ls.push_back(adlist[ss].id);
+							
+						}
+					}
+					std::sort(ls.begin(), ls.end());
+					ls.erase(unique(ls.begin(), ls.end()), ls.end());
+					
+					if (ls.size() / 2 < 3)return true;
+				}
+		}
+		// y 方向18
+		if (decXYZ(p1) == 2 && decXYZ(p2) == 2)
+		{
+			recmo reccc;
+			reccc.x1 = p2.minp.x;
+			reccc.y2 = p2.minp.z;
+			reccc.x11 = p2.maxp.x;
+			reccc.y22 = p2.maxp.z;
+			if (PointInRec(p1.center.x, p1.center.z, reccc) && p1.id != p2.id&&
+				abs(p1.center.y - p2.center.y) < 100)
+			{
+				std::vector<AcDbObjectId> ls;
+				for (int ss = 0; ss < adlist.size(); ss++)
+				{
+					if ((BoxIntersectBox2(ExpandBack(p1, 2, 3), adlist[ss], -0.5) && gsst(adlist[ss]) && adlist[ss].id != p1.id&&adlist[ss].id != p2.id))
+					{
+						ls.push_back(adlist[ss].id);
+						
+					}
+					if ((BoxIntersectBox2(ExpandBack(p2, 2, 3), adlist[ss], -0.5) && gsst(adlist[ss]) && adlist[ss].id != p1.id&&adlist[ss].id != p2.id))
+					{
+						ls.push_back(adlist[ss].id);
+						
+					}
+				}
+
+					std::sort(ls.begin(), ls.end());
+					ls.erase(unique(ls.begin(), ls.end()), ls.end());
+					
+					if (ls.size() / 2 < 3)return true;
+			}
+
+		}
+	}
+	
+	return false;
+
+}
+
+// 检查衣通位置
+int TestYt2(const EntBox &p1, const EntBox &p2)
+{
+	// 判断p1 是衣通 p2  不是衣通
+	bool p1yt = ((int)(p1.maxp.x - p1.minp.x) == 15 || (int)(p1.maxp.y - p1.minp.y) == 15) &&
+		p1.Layer == Layer_wjls && (int)(p1.maxp.z - p1.minp.z) == 30;
+	if (!p1yt)
+		return 0;
+	bool p2box = p2.id != p1.id&&gsst(p2);
+	if (!p2box)
+		return 0;
+	AcGePoint3d yap;
+	AcGePoint3d yip;
+	bool a1 = false;
+	bool a2 = false;
+	// 判断衣杆方向
+	if (p1.maxp.x - p1.minp.x > 100)
+	{
+		yap.x = p1.maxp.x + 7;
+		yip.x = p1.minp.x - 7;
+		yap.y = p1.maxp.y;
+		yip.y = p1.minp.y;
+	}
+	else
+	{
+		yap.x = p1.maxp.x;
+		yip.x = p1.minp.x;
+		yap.y = p1.maxp.y + 7;
+		yip.y = p1.minp.y - 7;
+	}
+	yap.z = p1.maxp.z;
+	yip.z = p1.minp.z;
+	if (PointInBoxTangency(yap, p2))return 1;// 判断大点
+	
+	if (PointInBoxTangency(yip, p2))return 2;// 判断小点
+	return 0;
+	
+}
+// 判断生成门铰
+bool isMj(const EntBox &p1)
+{
+	if (((p1.volume > 16537 && p1.volume < 16538) || (p1.volume > 17149 && p1.volume < 17151))
+		&& p1.Type == Solid && p1.Layer == Layer_door &&
+		((int)(p1.maxp.x - p1.minp.x - 0.1) == 13 || (int)(p1.maxp.y - p1.minp.y - 0.1) == 13 || (int)(p1.maxp.z - p1.minp.z - 0.1) == 13)
+		)return true;
+	return false;
+}
+
+TEntBox CreaterMJ(const EntBox &mj)
+{
+	TEntBox newMj;
+	newMj.sx.id = mj.id;
+	newMj.sx.Layer = mj.Layer;
+	newMj.sx.Type = mj.Type;
+	newMj.sx.center = mj.center;
+
+	newMj.zy.id = mj.id;
+	newMj.zy.Layer = mj.Layer;
+	newMj.zy.Type = mj.Type;
+	newMj.zy.center = mj.center;
+	// 判断是否是X轴的门铰
+	if ((int)(mj.maxp.x - mj.minp.x - 0.1) != 13)
+	{
+		// 创建两个实体 x面 y 值是深度 z是高度
+		// 35 是上下的高度
+		//
+		newMj.fx = 0;
+		// 上下面
+		newMj.sx.minp.z = mj.center.z - 35;
+		newMj.sx.maxp.z = mj.center.z + 35;
+		newMj.sx.minp.y = mj.center.y - 75;
+		newMj.sx.maxp.y = mj.center.y + 75;
+		newMj.sx.minp.x = mj.center.x - 4;
+		newMj.sx.maxp.x = mj.center.x + 4;
+		// 左右面
+		newMj.zy.minp.z = mj.center.z - 4;
+		newMj.zy.maxp.z = mj.center.z + 4;
+		newMj.zy.minp.y = mj.center.y - 75;
+		newMj.zy.maxp.y = mj.center.y + 75;
+		newMj.zy.minp.x = mj.center.x - 35;
+		newMj.zy.maxp.x = mj.center.x + 35;
+
+	}
+	else
+	{
+		// 与y轴平行
+		newMj.fx = 1;
+		// 上下面
+		newMj.sx.minp.z = mj.center.z - 35;
+		newMj.sx.maxp.z = mj.center.z + 35;
+		newMj.sx.minp.y = mj.center.y - 4;
+		newMj.sx.maxp.y = mj.center.y + 4;
+		newMj.sx.minp.x = mj.center.x - 75;
+		newMj.sx.maxp.x = mj.center.x + 75;
+		// 左右面
+		newMj.zy.minp.z = mj.center.z - 4;
+		newMj.zy.maxp.z = mj.center.z + 4;
+		newMj.zy.minp.y = mj.center.y - 35;
+		newMj.zy.maxp.y = mj.center.y + 35;
+		newMj.zy.minp.x = mj.center.x - 75;
+		newMj.zy.maxp.x = mj.center.x + 75;
+
+	}
+	return newMj;
+}
+
+int TestMj(const TEntBox &newMj, const EntBox &p2)
+{
+	
+	if (p2.Layer != Layer_door && p2.Type == Solid && p2.Layer != Layer_wjls && maxbord(p2)
+		&& BoxIntersectBox2(newMj.sx, p2, 0.0) && !EquaPoint(newMj.sx.center, p2.center))
+		return 1;
+	if (p2.Layer != Layer_door && p2.Type == Solid && p2.Layer != Layer_wjls && maxbord(p2)
+		&& BoxIntersectBox2(newMj.zy, p2, 0.0) && !EquaPoint(newMj.sx.center, p2.center))
+		return 2;
+
+	return 0;
 }

@@ -5,16 +5,18 @@ extern const std::string Layer_beib;
 extern const std::string Layer_wjls;
 extern const std::string Solid;
 
-const struct EntBox
-{
-	AcGePoint3d minp;// 小
-	AcGePoint3d maxp;// 大
-	AcGePoint3d center;
-	std::string Layer;
-	std::string Type;
-	AcDbObjectId id;
-	double volume;
-};
+//const struct EntBox
+//{
+//	AcGePoint3d minp;// 小
+//	AcGePoint3d maxp;// 大
+//	AcGePoint3d center;
+//	std::string Layer;
+//	std::string Type;
+//	AcDbObjectId id;
+//	double volume;
+//};
+
+
 
 struct recmo
 {
