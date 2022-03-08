@@ -157,7 +157,18 @@ bool bigfun2c(const EntBox &p1, int wd)
 	return false;
 
 }
-
+// 是拉手孔位
+bool isLskwf(const EntBox &p1)
+{
+	
+	if ((
+		p1.volume == 450 ||
+		p1.volume == 500 ||
+		p1.volume == 300) &&
+		p1.Type == Solid &&
+		p1.Layer == Layer_door) return true;
+	return false;
+}
 // 三边大于某数
 bool bigfun3c(const EntBox &p1, int wd)
 {
@@ -368,7 +379,30 @@ int decXYZ(const EntBox &p1)
 	if (round(p1.maxp.y - p1.minp.y) == 18 || round(p1.maxp.y - p1.minp.y) == 9)return 2;
 	if (round(p1.maxp.z - p1.minp.z) == 18 || round(p1.maxp.z - p1.minp.z) == 9)return 3;
 	return 0;
+}
 
+// 0 x 方向 1 Y方向
+// 返回2 就是 顶面门
+int dec01(const EntBox &p1)
+{
+	if (p1.maxp.x - p1.minp.x < p1.maxp.y - p1.minp.y) return 1;
+	if (p1.maxp.z - p1.minp.z < p1.maxp.x - p1.minp.x&&
+		p1.maxp.z - p1.minp.z < p1.maxp.y - p1.minp.y&&
+		p1.maxp.z - p1.minp.z < 30
+		)
+	{
+		return 2;
+	}
+	return 0;
+	
+}
+
+void CLs(const EntBox &p1, const EntBox &p2, int fx,int sx, const ACHAR* text)
+{
+	CreateLine(p1.center, p2.center, 120);
+	CreateArrow(p1.center, fx, sx, 120, 120);
+	CreateArrow(p2.center, fx, sx, 120, 120);
+	CText(LineCenter(p1.center, p2.center), text, fx);
 
 }
 
@@ -570,11 +604,12 @@ TEntBox CreaterMJ(const EntBox &mj)
 
 	}
 	return newMj;
+
 }
 
 int TestMj(const TEntBox &newMj, const EntBox &p2)
 {
-	
+
 	if (p2.Layer != Layer_door && p2.Type == Solid && p2.Layer != Layer_wjls && maxbord(p2)
 		&& BoxIntersectBox2(newMj.sx, p2, 0.0) && !EquaPoint(newMj.sx.center, p2.center))
 		return 1;
@@ -582,5 +617,217 @@ int TestMj(const TEntBox &newMj, const EntBox &p2)
 		&& BoxIntersectBox2(newMj.zy, p2, 0.0) && !EquaPoint(newMj.sx.center, p2.center))
 		return 2;
 
+	
 	return 0;
+	
+}
+
+void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vector<MyMj> &mj)
+{
+	// 判断同一门内门铰 盖值统一
+	if (!mj.empty())
+	{
+		for (int i = 0; i < door.size(); i++)
+		{
+			double value = 0;
+			AcGePoint3d pp;
+			for (int j = 0; j < mj.size(); j++)
+			{
+				if (PointInBoxTangency(mj[j].p1.sx.center, door[i]))
+				{
+					if (mj[j].minValue != 0 && abs(value - mj[j].minValue) > 2
+						&& value != 0)
+					{
+						CreateArrow(mj[j].p1.sx.center, mj[j].fx, 0, 110, 100);
+						CreateLine(pp, mj[j].p1.sx.center, 1);
+						CText(mj[j].p1.sx.center, _T("此门两种盖值门铰"), mj[j].fx);
+						break;
+					}
+					value = mj[j].minValue;
+					pp = mj[j].p1.sx.center;
+
+				}
+			}
+		}
+	}
+	// 检查拉手位置
+	if (!ls.empty())
+	{
+		
+		std::vector<DrLs> drlist; // 生成拉手门列表
+		for (int i = 0; i < door.size(); i++)
+		{
+			DrLs drls1;
+			for (int j = 0; j < ls.size(); j++)
+			{
+				if (PointInBoxTangency(ls[j], door[i]))
+				{
+					drls1.lspoint.push_back(ls[j]);
+				}
+			}
+			// 拉手门合成
+			if (!drls1.lspoint.empty())
+			{
+				drls1.DoorDt = door[i];
+				drlist.push_back(drls1);
+			}
+		}
+
+		// 检查拉手位置错误
+		if (drlist.size()>1)
+		{
+			std::vector<AcGePoint3d> errovec;
+			for (int i = 0; i < drlist.size(); i++)
+			{
+				for (int j = 0; j < drlist.size(); j++)
+				{
+					if (i != j
+						&& abs(drlist[i].DoorDt.minp.z - drlist[j].DoorDt.minp.z) < 9
+						&& abs(drlist[i].DoorDt.center.z - drlist[j].DoorDt.center.z) < 1
+						&& abs(drlist[i].DoorDt.maxp.z - drlist[j].DoorDt.maxp.z) < 50
+						)
+					{
+						for (int s = 0; s < drlist[j].lspoint.size(); s++)
+						{
+							for (int ss = 0; ss < drlist[i].lspoint.size(); ss++)
+							{
+								if (round(drlist[j].lspoint[s].z) == round(drlist[i].lspoint[ss].z))break;
+								if (ss == drlist[i].lspoint.size() - 1)
+								{
+									errovec.push_back(drlist[j].lspoint[s]);
+								}
+							}
+						}
+					}
+				}
+			}
+			if (errovec.size() == 1)
+			{
+				CreateBox(errovec[0], 20, 110);
+			}
+
+			for (int i = 0; i < errovec.size(); i++)
+			{
+				CText(errovec[i], _T("    __拉手未对齐!"),0);
+				CreateArrow(errovec[i], 0, 0, 100, 100);
+				CreateArrow(errovec[i], 1, 0, 100, 100);
+				//Arrow3dXY(errovec[i], 22, 1);
+				/*if (i != 0)
+				{
+					CreateLine(errovec[i - 1], errovec[i], 1);
+				}*/
+			}
+		}
+	}
+	// 检查合成后门板位置 分别是上下不对门缝  左右不对门缝
+	// 还有上下54 的拉手
+
+	for (int x = 0; x < door.size(); x++)
+	{
+
+		// 这里来判断54 拉手里地面高度1600 的基准向上向下
+		for (int s = 0; s < ls.size(); s++)
+		{
+			double z1 = round(abs(door[x].maxp.z - ls[s].z));//在上
+			double z2 = round(abs(door[x].minp.z - ls[s].z));//在下
+
+			if (PointInBoxTangency(ls[s], door[x]))
+			{
+				if (z1 == 54 && door[x].minp.z > 1600)
+				{
+					CreateArrow(ls[s], dec01(door[x]), 0, 120, 100);
+					CText(door[x].center, _T("特殊拉手,门板方向下!"),dec01(door[x]));
+				}
+				if (z2 == 54 && door[x].minp.z < 1600)
+				{
+					CreateArrow(ls[s], dec01(door[x]), 0, 120, 100);
+					CText(door[x].center, _T("特殊拉手,门板方向上!"), dec01(door[x]));
+				}
+			}
+		}
+		//上下左右门缝未对齐!
+		for (int i = 0; i < door.size(); i++)
+		{
+			// 判断的是z 大小点差值位置在18以内的
+			// 上下门缝不对齐
+			int mfx = dec01(door[x]);
+			int mfx1 = dec01(door[i]);
+			// y 方向 上下门缝不对齐
+			if (abs(door[x].minp.z - door[i].maxp.z) < 18 &&
+				mfx == mfx1 &&
+				mfx == 1)
+			{
+				double cz = abs(door[x].maxp.y - door[i].maxp.y);
+				double cz1 = abs(door[x].minp.y - door[i].minp.y);
+				if ((cz<18 && cz>0.5) || (cz1<18 && cz1>0.5))
+				{
+					CLs(door[x], door[i], mfx, 1, _T("_上下门缝未对齐!"));
+				}
+			}
+			// x 方向上下门缝不对齐
+			if (abs(door[x].minp.z - door[i].maxp.z) < 18 &&
+				mfx == mfx1 &&
+				mfx == 0)
+			{
+				double cz = abs(door[x].maxp.x - door[i].maxp.x);
+				double cz1 = abs(door[x].minp.x - door[i].minp.x);
+				if ((cz<18 && cz>0.5) || (cz1<18 && cz1>0.5))
+				{
+					CLs(door[x], door[i], mfx, 1, _T("_上下门缝未对齐!"));
+				}
+			}
+			// 判断 x 方向 门板左右 门缝不对齐
+			if (abs(door[x].minp.x - door[i].maxp.x) < 18 &&
+				mfx == mfx1 &&
+				mfx == 0)
+			{
+				// 小点z轴高度差值
+				double cz = abs(door[x].maxp.z - door[i].maxp.z);
+				double cz1 = abs(door[x].minp.z - door[i].minp.z);
+				if ((cz < 18 && cz>1) || (cz1 < 18 && cz1>1))
+				{
+					CLs(door[x], door[i], mfx, 0, _T("_左右门缝未对齐!"));
+				}
+			}
+			// 判断 y 方向 门板左右 门缝不对齐
+			if (abs(door[x].minp.y - door[i].maxp.y) < 18 &&
+				mfx == mfx1 &&
+				mfx == 1)
+			{
+				// 小点z轴高度差值
+				double cz = abs(door[x].maxp.z - door[i].maxp.z);
+				double cz1 = abs(door[x].minp.z - door[i].minp.z);
+				if ((cz < 18 && cz>1) || (cz1 < 18 && cz1>1))
+				{
+					CLs(door[x], door[i], mfx, 0, _T("_左右门缝未对齐!"));
+				}
+			}
+			// 门板最小 最大值差别不大， y 或者y 距离差6-18 区间
+			if (mfx == mfx1 && mfx == 0)
+			{
+				double bcz = abs(door[x].maxp.x - door[i].minp.x);
+				double xcz = abs(door[x].minp.x - door[i].maxp.x);
+				double p1z = door[x].center.z< door[i].maxp.z&&door[x].center.z > door[i].minp.z;
+				double p2z = door[i].center.z< door[x].maxp.z&&door[i].center.z > door[x].minp.z;
+
+				if (((bcz < 18 && bcz>5) || (xcz < 18 && xcz>5))&&(p1z||p2z))
+				{
+					CLs(door[x], door[i], mfx, 0, _T("_门缝大于4!"));
+				}
+			}
+			if (mfx == mfx1 && mfx == 1)
+			{
+				double bcz = abs(door[x].maxp.y - door[i].minp.y);
+				double xcz = abs(door[x].minp.y - door[i].maxp.y);
+				double p1z = door[x].center.z< door[i].maxp.z&&door[x].center.z > door[i].minp.z;
+				double p2z = door[i].center.z< door[x].maxp.z&&door[i].center.z > door[x].minp.z;
+
+				if (((bcz < 18 && bcz>5) || (xcz < 18 && xcz>5)) && (p1z || p2z))
+				{
+					CLs(door[x], door[i], mfx, 0, _T("_门缝大于4!"));
+				}
+			}
+				
+		}
+	}
 }

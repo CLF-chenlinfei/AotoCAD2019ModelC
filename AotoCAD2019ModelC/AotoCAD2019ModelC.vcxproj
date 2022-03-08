@@ -73,6 +73,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
       <SmallerTypeCheck Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</SmallerTypeCheck>
+      <SDLCheck Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</SDLCheck>
+      <SmallerTypeCheck Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</SmallerTypeCheck>
     </ClCompile>
     <Link>
     </Link>

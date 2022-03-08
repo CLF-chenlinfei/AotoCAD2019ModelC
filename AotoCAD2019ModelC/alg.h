@@ -24,6 +24,22 @@ struct TEntBox
 	
 };
 
+struct MyMj
+{
+	// 相交方式分为1上下，0左右
+	int xjfs;
+	double minValue;
+	int fx; // 门铰平行面
+	TEntBox p1;
+
+};
+struct DrLs
+{
+	EntBox DoorDt;
+	std::vector<AcGePoint3d> lspoint;
+};
+
+bool isLskwf(const EntBox &p1);
 TEntBox CreaterMJ(const EntBox &mj);
 bool maxbord(const EntBox &p1);
 bool bigfun2c(const EntBox &p1, int wd = 60);
@@ -43,7 +59,7 @@ AcGePoint3d LineCenter(const AcGePoint3d &p1, const AcGePoint3d &p2);
 bool DoubleEq(double n1, double n2, double chaz=0.1);
 // 膨胀实体
 EntBox ExspansionEnt(const EntBox &p1, double greater=2.0);
-
+int dec01(const EntBox &p1);
 // 盒子相交2 这个是全面的
 bool BoxIntersectBox2(const EntBox &b1, const EntBox &b2, double pz=0.0);
 // 面与面相交
@@ -74,3 +90,5 @@ bool PointInBoxTangency(const AcGePoint3d &p1, const EntBox &box);
 int TestYt2(const EntBox &p1, const EntBox &p2);
 
 int TestMj(const TEntBox &newMj, const EntBox &p2);
+
+void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vector<MyMj> &mj);

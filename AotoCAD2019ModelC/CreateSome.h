@@ -23,4 +23,4 @@ void Arrow3dXY(AcGePoint3d& cp, int le, int col);
 
 void CreateLine(const AcGePoint3d &startPoint,
 	const AcGePoint3d &endPoint, int col);
-void CreateArrow(AcGePoint3d& point, int xy, int sx, int color, int le);
+void CreateArrow(const AcGePoint3d& point, int xy, int sx, int color, int le);

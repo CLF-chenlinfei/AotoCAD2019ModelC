@@ -106,7 +106,7 @@ void Arrow3dXY(AcGePoint3d& cp, int le, int col)
 }
 
 // 箭头 01 轴向xy 方向 01 sx
-void CreateArrow(AcGePoint3d& point, int xy, int sx, int color, int le)
+void CreateArrow(const AcGePoint3d& point, int xy, int sx, int color, int le)
 {
 	// 方向有上下 上下1 不动0 xy 0x y1
 

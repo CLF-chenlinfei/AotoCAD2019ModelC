@@ -15,7 +15,8 @@ void CkModel(vector<EntBox>ent)
 {
 	vector<EntBox> ADDdoorArray; // 合成后的门板
 	vector<int> v; //数组集合，若不在集合内相加
-	vector<TEntBox> MjArray;
+	vector<MyMj> MjArray;
+	vector<AcGePoint3d> DrLsArry;
 	// 实体数量必须有2个或者以上
 	if (!ent.empty())
 	{
@@ -29,15 +30,20 @@ void CkModel(vector<EntBox>ent)
 				&& std::find(v.begin(), v.end(), i) == v.end();
 			EntBox newi = ent[i];
 			// 检查门铰
+			
 			bool bmj = isMj(ent[i]);
 			TEntBox tts = CreaterMJ(ent[i]);
 			bool psx = false;
 			bool pzy = false;
-
+			MyMj np1;
+			np1.p1 = tts;
+			np1.fx = tts.fx;
+			// 集合最小相交点？
+			std::vector<double> sxv;
+			std::vector<double> zyv;
 
 			for (int j = 0; j < ent.size(); j++)
 			{
-				
 				// 1.判断孔位重叠相交 三/二 合一
 				if (judeMore(ent[i], ent[j]))
 				{
@@ -96,11 +102,6 @@ void CkModel(vector<EntBox>ent)
 					if (yy == 2) ytz = true;
 					
 				}
-				//先合成门板 用于检查拉手与门铰
-				// 8.检查门铰(应该包含门铰与其他相交，门铰有无连接)
-				// CText(p1.sx.center, _T("门铰与其他干涉。"));
-				// CText(p1.sx.center, _T("门铰无连接？"));
-				// CText(lsit1[j].p1.sx.center, _T("此门门铰盖值不一致!"))
 				
 				bool jisdoor = ent[j].Layer == Layer_door && ent[j].Type == Solid;
 				if (iisdoor)
@@ -134,58 +135,104 @@ void CkModel(vector<EntBox>ent)
 						CText(ent[i].center, _T("衣通尺寸错误!"), 0);
 					}
 				}
-				// CText(errovec[i], _T("    __拉手未对齐!"));
-				// CText(bb9.minp, _T("背板入槽?"));
-				// CText(LineCenter(wdlist[x].center, ent[s].center), _T("门板方向下!"));
-				// CText(LineCenter(wdlist[x].center, ent[s].center), _T("门板方向上!"));
-				// CText(LineCenter(wdlist[x].center, wdlist[i].center), _T("_上下门缝未对齐!"));
-				//  同门内门铰盖值 应该是合成后的门板和前的都有
+				// 门板
 				if (bmj)
 				{
 					int n = TestMj(tts, ent[j]);
-					if (n == 1)psx = true;
-					if (n == 2)pzy = true;
+					if (n == 1) 
+					{
+						if (tts.fx == 0)
+						{
+							sxv.push_back(abs(ent[j].minp.z - tts.sx.center.z));
+						}
+						psx = true;
+					}
+					
+
+					if (n == 2)
+					{
+						if (tts.fx == 0)
+						{
+							zyv.push_back(abs(ent[j].minp.x - tts.sx.center.x));
+							zyv.push_back(abs(ent[j].maxp.x - tts.sx.center.x));
+						}
+						else
+						{
+							zyv.push_back(abs(ent[j].minp.y - tts.sx.center.y));
+							zyv.push_back(abs(ent[j].maxp.y - tts.sx.center.y));
+						}
+						pzy = true;
+					}
+
 				}
 			}
-			// 添加合成门板
-			if (bigfun2c(newi)&&iisdoor)ADDdoorArray.push_back(newi);
-
-			// 画门铰错误
-			if (psx&&pzy&&bmj)
-			{
-				CreateArrow(tts.sx.center, tts.fx, 0, 110, 150);
-				CText(tts.sx.center, _T("门铰与其他干涉。"), tts.fx);
-			}
-			if (!psx && !pzy&&bmj)
-			{
-				CreateArrow(tts.sx.center, tts.fx, 0, 110, 150);
-				CText(tts.sx.center, _T("门铰无连接？"),0);
-
-			}
 			
-			// 9.检查门板拉手集合表
-			// 10.检查合成后的门板表门缝
-			// 11.检查门板与门铰关系， 当门铰在门板内 切最小值不等时判断为错，容差2
+			// 门铰错误 以及生成门铰带方向与最小距离
+			if (bmj)
+			{
+				// 我犯了一个错误，实列化完成后在添加
+				if (psx&&pzy)
+				{
+					CreateArrow(tts.sx.center, tts.fx, 0, 110, 150);
+					CText(tts.sx.center, _T("门铰与其他干涉。"), tts.fx);
+					np1.minValue = 0;
+					np1.xjfs = 3;
+				}
+				if (!psx && !pzy)
+				{
+					CreateArrow(tts.sx.center, tts.fx, 0, 110, 150);
+					CText(tts.sx.center, _T("门铰无连接？"), dec01(ent[i]));
+
+				}
+				if (psx && !pzy)
+				{
+					if (!sxv.empty())
+					{
+						np1.minValue = *(min_element(sxv.begin(), sxv.end()));
+						np1.xjfs = 1;
+					}
+				}
+				if (!psx && pzy)
+				{
+					if (!zyv.empty())
+					{
+						np1.minValue = *(min_element(zyv.begin(), zyv.end()));
+						np1.xjfs = 0;
+					}
+				}
+				MjArray.push_back(np1);
+			}
+			// 生成合成门板集合
+			if (bigfun2c(newi) && iisdoor)ADDdoorArray.push_back(newi);
+			// 拉手集合生成
+			if (isLskwf(ent[i]))DrLsArry.push_back(ent[i].center);
 			// 12.检查门铰数量
 			// 291-900   x2
 			// 901-1600  x3
 			// 1601-2100 x4
 			// 2101-2400 x5
 			// 2401-2700 x6
-			// 13.检查拉手位置
-			// 14.9mm板未入槽检测，注意装饰盒
-			// 15.检查门缝（有上下，有左右 上下应该是不对齐，左右差5-18）
-			// CText(wdlist[i].center, _T("X_门缝5-18!"));
-			// CText(wdlist[i].center, _T("Y_5-18门缝!"));
+			// 14.9mm板未入槽检测，注意装饰盒 
 			// 16.孔位检查
 			// CText(LineCenter(rec18data[i].p1, rec18data[i].p2), _T("板件尺寸错误"));
 
 		}
 	}
+	if (!DrLsArry.empty())
+	{
+		for (int i=0; i<DrLsArry.size();i++)
+		{
+			/*Arrow3dXY(DrLsArry[i], 100, 100);*/
+
+		}
+		acutPrintf(_T("\n ls number:%d !"), DrLsArry.size());
+	}
 	if (!ADDdoorArray.empty())
 	{
-		
-		acutPrintf(_T("\n doorsize:%d !"), ADDdoorArray.size());
+		// 检查项目有同门门铰位置不同
+		// 还有门缝5-18 门板上下对齐 左右对齐也要有
+		TestMjLs(ADDdoorArray, DrLsArry, MjArray);
+		//acutPrintf(_T("\n mj number:%d !"), MjArray.size());
 	}
 	
 	acutPrintf(_T("\n Hello yangyang 计算量:%d !"), ent.size()*ent.size());
