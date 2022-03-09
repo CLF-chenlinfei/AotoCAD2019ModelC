@@ -198,12 +198,23 @@ bool gsst(const EntBox &p1)
 {
 
 	bool a1 = bigfun1c(p1, 249);
-	bool a2 = bigfun2c(p1, 61);
+	bool a2 = bigfun2c(p1, 47);
 	bool a3 = bigfun3c(p1, 17);
 	if (a1&&a2&&a3&&p1.Layer != Layer_wjls && 
 		p1.Layer != Layer_door && p1.Type == Solid)return true;
 	return false;
+}
 
+// 非门板的 大于60*299 的板件
+bool gsst11(const EntBox &p1)
+{
+
+	bool a1 = bigfun1c(p1, 180);
+	bool a2 = bigfun2c(p1, 47);
+	bool a3 = bigfun3c(p1, 8);
+	if (a1&&a2&&a3&&p1.Layer != Layer_wjls &&
+		p1.Layer != Layer_door && p1.Type == Solid)return true;
+	return false;
 }
 // 包含门板 大于60*299 的板件
 bool gsdoor(const EntBox &p1)
@@ -397,6 +408,7 @@ int dec01(const EntBox &p1)
 	
 }
 
+
 void CLs(const EntBox &p1, const EntBox &p2, int fx,int sx, const ACHAR* text)
 {
 	CreateLine(p1.center, p2.center, 120);
@@ -445,17 +457,12 @@ bool MoreBack(const EntBox &p1, const EntBox &p2, std::vector<EntBox> &adlist)
 					for (int ss = 0; ss < adlist.size(); ss++)
 					{
 						if ((BoxIntersectBox2(ExpandBack(p1, 1, 3), adlist[ss], -0.5) && gsst(adlist[ss]) && adlist[ss].id != p1.id&&adlist[ss].id != p2.id))
-						{
 							ls.push_back(adlist[ss].id);
-							
-						}
 						if ((BoxIntersectBox2(ExpandBack(p2, 1, 3), adlist[ss], -0.5) && gsst(adlist[ss]) && adlist[ss].id != p1.id&&adlist[ss].id != p2.id))
-						{
 							ls.push_back(adlist[ss].id);
-							
-						}
 					}
 					std::sort(ls.begin(), ls.end());
+					
 					ls.erase(unique(ls.begin(), ls.end()), ls.end());
 					
 					if (ls.size() / 2 < 3)return true;
@@ -475,21 +482,15 @@ bool MoreBack(const EntBox &p1, const EntBox &p2, std::vector<EntBox> &adlist)
 				std::vector<AcDbObjectId> ls;
 				for (int ss = 0; ss < adlist.size(); ss++)
 				{
-					if ((BoxIntersectBox2(ExpandBack(p1, 2, 3), adlist[ss], -0.5) && gsst(adlist[ss]) && adlist[ss].id != p1.id&&adlist[ss].id != p2.id))
-					{
+					if ((BoxIntersectBox2(ExpandBack(p1, 2, 3), adlist[ss], -0.5) && gsst11(adlist[ss]) && adlist[ss].id != p1.id&&adlist[ss].id != p2.id))
 						ls.push_back(adlist[ss].id);
-						
-					}
-					if ((BoxIntersectBox2(ExpandBack(p2, 2, 3), adlist[ss], -0.5) && gsst(adlist[ss]) && adlist[ss].id != p1.id&&adlist[ss].id != p2.id))
-					{
+					if ((BoxIntersectBox2(ExpandBack(p2, 2, 3), adlist[ss], -0.5) && gsst11(adlist[ss]) && adlist[ss].id != p1.id&&adlist[ss].id != p2.id))
 						ls.push_back(adlist[ss].id);
-						
-					}
 				}
 
 					std::sort(ls.begin(), ls.end());
 					ls.erase(unique(ls.begin(), ls.end()), ls.end());
-					
+					//acutPrintf(_T("\n 数组量:%d"), ls.size());
 					if (ls.size() / 2 < 3)return true;
 			}
 
@@ -504,10 +505,10 @@ bool MoreBack(const EntBox &p1, const EntBox &p2, std::vector<EntBox> &adlist)
 int TestYt2(const EntBox &p1, const EntBox &p2)
 {
 	// 判断p1 是衣通 p2  不是衣通
-	bool p1yt = ((int)(p1.maxp.x - p1.minp.x) == 15 || (int)(p1.maxp.y - p1.minp.y) == 15) &&
+	/*bool p1yt = ((int)(p1.maxp.x - p1.minp.x) == 15 || (int)(p1.maxp.y - p1.minp.y) == 15) &&
 		p1.Layer == Layer_wjls && (int)(p1.maxp.z - p1.minp.z) == 30;
 	if (!p1yt)
-		return 0;
+		return 0;*/
 	bool p2box = p2.id != p1.id&&gsst(p2);
 	if (!p2box)
 		return 0;
@@ -620,6 +621,46 @@ int TestMj(const TEntBox &newMj, const EntBox &p2)
 	
 	return 0;
 	
+}
+
+// 9mm板未入槽检测，注意装饰盒
+int dec9mmBB(const EntBox &bb9, const EntBox &adlist)
+{
+	// 找到 9mm 板件 判断他的大点或者小点是否有一个不与任何板件相交
+	
+	int a = 2;// 点位移大小
+	//bb9mm = (round(ent[i].maxp.x - ent[i].minp.x) == 9 || round(ent[i].maxp.z - ent[i].minp.z) == 9 || round(ent[i].maxp.y - ent[i].minp.y) == 9)
+	AcGePoint3d maxp;
+	AcGePoint3d minp;
+	if (round(bb9.maxp.x - bb9.minp.x) == 9)
+	{
+		// y 轴
+		maxp.x = bb9.center.x;
+		maxp.y = bb9.maxp.y;
+		maxp.z = bb9.maxp.z + a;
+
+		minp.x = bb9.center.x;
+		minp.y = bb9.minp.y;
+		minp.z = bb9.minp.z - a;
+	}
+	else
+	{
+		// x 轴
+		maxp.x = bb9.maxp.x;
+		maxp.y = bb9.center.y;
+		maxp.z = bb9.maxp.z + a;
+
+		minp.x = bb9.minp.x;
+		minp.y = bb9.center.y;
+		minp.z = bb9.minp.z - a;
+	}
+
+	if (bb9.id != adlist.id&&PointInBoxTangency(maxp, adlist))
+		return 1; //大点
+
+	if (bb9.id != adlist.id&&PointInBoxTangency(minp, adlist))
+		return 2; // 小点
+	return 0;
 }
 
 void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vector<MyMj> &mj)

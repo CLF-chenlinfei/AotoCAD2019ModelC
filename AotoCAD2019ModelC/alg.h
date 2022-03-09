@@ -83,6 +83,7 @@ bool MoreBack(const EntBox &p1, const EntBox &p2, std::vector<EntBox> &adlist);
 //bool MoreBack(EntBox &p1, EntBox &p2);
 
 bool isbb(const EntBox &p1);
+
 int decXYZ(const EntBox &p1);
 
 bool PointInBoxTangency(const AcGePoint3d &p1, const EntBox &box);
@@ -90,5 +91,7 @@ bool PointInBoxTangency(const AcGePoint3d &p1, const EntBox &box);
 int TestYt2(const EntBox &p1, const EntBox &p2);
 
 int TestMj(const TEntBox &newMj, const EntBox &p2);
+
+int dec9mmBB(const EntBox &bb9, const EntBox &adlist);
 
 void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vector<MyMj> &mj);

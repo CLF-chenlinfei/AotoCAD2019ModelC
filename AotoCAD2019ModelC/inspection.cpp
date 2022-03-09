@@ -22,15 +22,18 @@ void CkModel(vector<EntBox>ent)
 	{
 		for (int i = 0; i < ent.size(); i++)
 		{
-			// 7.检查衣通
+			int ifx = dec01(ent[i]);
+			// 7.检查衣通参数
+			bool p1yt = ((int)(ent[i].maxp.x - ent[i].minp.x) == 15 || (int)(ent[i].maxp.y - ent[i].minp.y) == 15) &&
+				ent[i].Layer == Layer_wjls && (int)(ent[i].maxp.z - ent[i].minp.z) == 30;
 			bool ytz = false;// 衣通左右是否
 			bool yty = false;
 			bool isyt = false;
+			// 检查门板参数
 			bool iisdoor = ent[i].Layer == Layer_door && ent[i].Type == Solid
 				&& std::find(v.begin(), v.end(), i) == v.end();
 			EntBox newi = ent[i];
-			// 检查门铰
-			
+			// 检查生成门铰
 			bool bmj = isMj(ent[i]);
 			TEntBox tts = CreaterMJ(ent[i]);
 			bool psx = false;
@@ -41,6 +44,11 @@ void CkModel(vector<EntBox>ent)
 			// 集合最小相交点？
 			std::vector<double> sxv;
 			std::vector<double> zyv;
+			// 9mm背板未入槽
+			bool on_offa = false; // 大点开关
+			bool on_offi = false;
+			bool bb9mm = (round(ent[i].maxp.x - ent[i].minp.x) == 9 || round(ent[i].maxp.z - ent[i].minp.z) == 9 || round(ent[i].maxp.y - ent[i].minp.y) == 9)
+				&& ent[i].Layer == Layer_beib && ent[i].Type == Solid&&bigfun2c(ent[i], 80);
 
 			for (int j = 0; j < ent.size(); j++)
 			{
@@ -94,15 +102,18 @@ void CkModel(vector<EntBox>ent)
 					}
 				}
 				// 7.检查衣通
-				int yy = TestYt2(ent[i], ent[j]);
-				if (yy!=0)
+				if (p1yt)
 				{
-					isyt = true;
-					if (yy == 1) yty = true;
-					if (yy == 2) ytz = true;
-					
+					int yy = TestYt2(ent[i], ent[j]);
+					if (yy != 0)
+					{
+						isyt = true;
+						if (yy == 1) yty = true;
+						if (yy == 2) ytz = true;
+
+					}
 				}
-				
+				// 8.检查门板
 				bool jisdoor = ent[j].Layer == Layer_door && ent[j].Type == Solid;
 				if (iisdoor)
 				{
@@ -116,23 +127,6 @@ void CkModel(vector<EntBox>ent)
 						v.push_back(j);
 						newi.maxp = AcGePoint3d(max(newi.maxp.x, ent[j].maxp.x), max(newi.maxp.y, ent[j].maxp.y), max(newi.maxp.z, ent[j].maxp.z));
 						newi.minp = AcGePoint3d(min(newi.minp.x, ent[j].minp.x), min(newi.minp.y, ent[j].minp.y), min(newi.minp.z, ent[j].minp.z));
-					}
-				}
-				// 最后一步判断 j值是衣杆检测的一部分!
-				if (j==ent.size()-1)
-				{
-					// 画出错误衣通
-					if (isyt && !yty)
-					{
-						CreateArrow(ent[i].maxp, 0, 0, 110, 100);
-						CreateArrow(ent[i].maxp, 1, 0, 110, 100);
-						CText(ent[i].center, _T("衣通尺寸错误!"), 0);
-					}
-					if (isyt && !ytz)
-					{
-						CreateArrow(ent[i].minp, 0, 0, 110, 100);
-						CreateArrow(ent[i].minp, 1, 0, 110, 100);
-						CText(ent[i].center, _T("衣通尺寸错误!"), 0);
 					}
 				}
 				// 门板
@@ -164,6 +158,13 @@ void CkModel(vector<EntBox>ent)
 						pzy = true;
 					}
 
+				}
+				// 9.9毫秒背板未入槽检测
+				if (bb9mm)
+				{
+					int aa = dec9mmBB(ent[i], ent[j]);
+					if (aa == 1) on_offi = true;
+					if (aa == 2) on_offa = true;
 				}
 			}
 			
@@ -206,6 +207,38 @@ void CkModel(vector<EntBox>ent)
 			if (bigfun2c(newi) && iisdoor)ADDdoorArray.push_back(newi);
 			// 拉手集合生成
 			if (isLskwf(ent[i]))DrLsArry.push_back(ent[i].center);
+			// 画出9毫米背板未入槽
+			if (bb9mm)
+			{
+				if (!on_offi)
+				{
+					CreateArrow(ent[i].maxp, ifx, 0, 110, 150);
+					CText(ent[i].maxp, _T("背板入槽?"),ifx);
+				}
+				if (!on_offa)
+				{
+					CreateArrow(ent[i].minp, ifx, 0, 110, 150);
+					CText(ent[i].minp, _T("背板入槽?"),ifx);
+				}
+				
+			}
+			//画出衣通错误
+			if (p1yt)
+			{
+				// 画出错误衣通
+				if (!yty)
+				{
+					CreateArrow(ent[i].maxp, ifx, 0, 110, 100);
+					CText(ent[i].center, _T("衣通尺寸错误!"), ifx);
+				}
+				if (!ytz)
+				{
+					
+					CreateArrow(ent[i].minp, ifx, 0, 110, 100);
+					CText(ent[i].center, _T("衣通尺寸错误!"), ifx);
+				}
+				
+			}
 			// 12.检查门铰数量
 			// 291-900   x2
 			// 901-1600  x3
@@ -218,15 +251,7 @@ void CkModel(vector<EntBox>ent)
 
 		}
 	}
-	if (!DrLsArry.empty())
-	{
-		for (int i=0; i<DrLsArry.size();i++)
-		{
-			/*Arrow3dXY(DrLsArry[i], 100, 100);*/
 
-		}
-		acutPrintf(_T("\n ls number:%d !"), DrLsArry.size());
-	}
 	if (!ADDdoorArray.empty())
 	{
 		// 检查项目有同门门铰位置不同
@@ -235,5 +260,5 @@ void CkModel(vector<EntBox>ent)
 		//acutPrintf(_T("\n mj number:%d !"), MjArray.size());
 	}
 	
-	acutPrintf(_T("\n Hello yangyang 计算量:%d !"), ent.size()*ent.size());
+	acutPrintf(_T("\n Hello LF 计算量:%d !"), ent.size()*ent.size());
 }
