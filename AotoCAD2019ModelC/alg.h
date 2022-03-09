@@ -39,6 +39,24 @@ struct DrLs
 	std::vector<AcGePoint3d> lspoint;
 };
 
+
+// 记住要改的 三合一面
+struct rec3d
+{
+	AcDbObjectId id;
+	AcGePoint3d p1;
+	AcGePoint3d p2;
+	// dd 是位置数，如正面 max.y =dd, 顶面 max.z=dd
+	double dd;
+	int zx;
+};
+struct mianAk
+{
+	rec3d mian;
+	int ji;
+};
+//
+
 bool isLskwf(const EntBox &p1);
 TEntBox CreaterMJ(const EntBox &mj);
 bool maxbord(const EntBox &p1);
@@ -94,4 +112,9 @@ int TestMj(const TEntBox &newMj, const EntBox &p2);
 
 int dec9mmBB(const EntBox &bb9, const EntBox &adlist);
 
+int JudgeBord(const EntBox &p1);
+
 void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vector<MyMj> &mj);
+
+// temp
+void testFindContact(std::vector<rec3d> &rec18data, std::vector<rec3d> &receldata, std::vector<rec3d> shym, int FB);

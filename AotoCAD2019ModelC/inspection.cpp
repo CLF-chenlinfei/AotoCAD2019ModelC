@@ -14,14 +14,166 @@ using namespace std;
 void CkModel(vector<EntBox>ent) 
 {
 	vector<EntBox> ADDdoorArray; // 合成后的门板
+	vector<EntBox> SHYArray; // 合成后的门板
 	vector<int> v; //数组集合，若不在集合内相加
 	vector<MyMj> MjArray;
 	vector<AcGePoint3d> DrLsArry;
 	// 实体数量必须有2个或者以上
+
+	// 暂时的三合一数据
+	std::vector<rec3d> rec18data; // 小面集合
+	std::vector<rec3d> receldata; // 大面集合
+	std::vector<rec3d> shym;
+
 	if (!ent.empty())
 	{
 		for (int i = 0; i < ent.size(); i++)
 		{
+			//获取三合一
+			//////////////////////////////////////////////////////////////////////////
+			// 要改的
+			if (ent[i].Layer != Layer_door && 
+				((ent[i].volume > 1855 && ent[i].volume < 1857) || 
+				(ent[i].volume > 299 && ent[i].volume < 301)) && 
+				ent[i].Type == Solid)
+			{
+
+				//29 c
+				rec3d rc1;
+				rec3d rc2;
+				rec3d rc3;
+				rec3d rc4;
+				//前 后 上 下
+				rc1.id = ent[i].id;
+				rc1.p1 = AcGePoint3d(ent[i].minp.x, ent[i].minp.y, ent[i].maxp.z);
+				rc1.p2 = ent[i].maxp;
+				rc1.dd = ent[i].maxp.z;
+				rc1.zx = 1;
+
+				rc2.id = ent[i].id;
+				rc2.p1 = ent[i].minp;
+				rc2.p2 = AcGePoint3d(ent[i].maxp.x, ent[i].maxp.y, ent[i].minp.z); rc2.dd = ent[i].minp.z;
+				rc2.zx = 1;
+
+				rc3.id = ent[i].id;
+				rc3.p1 = AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].minp.z);
+				rc3.p2 = ent[i].maxp; rc3.dd = ent[i].maxp.y;
+				rc3.zx = 2;
+
+				rc4.id = ent[i].id;
+				rc4.p1 = ent[i].minp;
+				rc4.p2 = AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].maxp.z); rc4.dd = ent[i].minp.y;
+				rc4.zx = 2;
+
+				rec3d rc5;
+				rc5.id = ent[i].id;
+				rc5.p1 = ent[i].minp;
+				rc5.p2 = AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].maxp.z); rc5.dd = ent[i].minp.x;
+				rc5.zx = 3;
+
+				rec3d rc6;
+				rc6.id = ent[i].id;
+				rc6.p1 = AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].minp.z);
+				rc6.p2 = ent[i].maxp; rc6.dd = ent[i].maxp.x;
+				rc6.zx = 3;
+				if ((int)(ent[i].maxp.x - ent[i].minp.x) == 29 ||
+					(int)(ent[i].maxp.x - ent[i].minp.x) == 12)
+				{
+					shym.push_back(rc5);
+					shym.push_back(rc6);
+				}
+				if ((int)(ent[i].maxp.y - ent[i].minp.y) == 29
+					|| (int)(ent[i].maxp.y - ent[i].minp.y) == 12)
+				{
+					shym.push_back(rc3);
+					shym.push_back(rc4);
+				}
+				if ((int)(ent[i].maxp.z - ent[i].minp.z) == 29
+					|| (int)(ent[i].maxp.z - ent[i].minp.z) == 12)
+				{
+					shym.push_back(rc1);
+					shym.push_back(rc2);
+				}
+			}
+
+			// 获取18 非18面
+			int br18 = JudgeBord(ent[i]);
+			if (br18!=0)
+			{
+				rec3d rc1;
+				rec3d rc2;
+				rec3d rc3;
+				rec3d rc4;
+				rec3d rc5;
+				rec3d rc6;
+				//前 后 上 下
+				rc1.id = ent[i].id;
+				rc1.p1 = AcGePoint3d(ent[i].minp.x, ent[i].minp.y, ent[i].maxp.z);
+				rc1.p2 = ent[i].maxp;
+				rc1.dd = ent[i].maxp.z;
+				rc1.zx = 1;
+
+				rc2.id = ent[i].id;
+				rc2.p1 = ent[i].minp;
+				rc2.p2 = AcGePoint3d(ent[i].maxp.x, ent[i].maxp.y, ent[i].minp.z);
+				rc2.dd = ent[i].minp.z;
+				rc2.zx = 1;
+
+				rc3.id = ent[i].id;
+				rc3.p1 = AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].minp.z);
+				rc3.p2 = ent[i].maxp;
+				rc3.dd = ent[i].maxp.y;
+				rc3.zx = 2;
+
+				rc4.id = ent[i].id;
+				rc4.p1 = ent[i].minp;
+				rc4.p2 = AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].maxp.z);
+				rc4.dd = ent[i].minp.y;
+				rc4.zx = 2;
+
+				rc5.id = ent[i].id;
+				rc5.p1 = ent[i].minp;
+				rc5.p2 = AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].maxp.z);
+				rc5.dd = ent[i].minp.x;
+				rc5.zx = 3;
+
+				rc6.id = ent[i].id;
+				rc6.p1 = AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].minp.z);
+				rc6.p2 = ent[i].maxp;
+				rc6.dd = ent[i].maxp.x;
+				rc6.zx = 3;
+				if (br18 == 1)
+				{
+					rec18data.push_back(rc1);
+					rec18data.push_back(rc2);
+					rec18data.push_back(rc3);
+					rec18data.push_back(rc4);
+					receldata.push_back(rc5);
+					receldata.push_back(rc6);
+
+				}
+				if (br18 == 2)
+				{
+					rec18data.push_back(rc1);
+					rec18data.push_back(rc2);
+					rec18data.push_back(rc5);
+					rec18data.push_back(rc6);
+					receldata.push_back(rc3);
+					receldata.push_back(rc4);
+				}
+				if (br18 == 3)
+				{
+					rec18data.push_back(rc3);
+					rec18data.push_back(rc4);
+					rec18data.push_back(rc5);
+					rec18data.push_back(rc6);
+					receldata.push_back(rc1);
+					receldata.push_back(rc2);
+				}
+			}
+			// 要改的
+			//////////////////////////////////////////////////////////////////////////
+			// 方向判断
 			int ifx = dec01(ent[i]);
 			// 7.检查衣通参数
 			bool p1yt = ((int)(ent[i].maxp.x - ent[i].minp.x) == 15 || (int)(ent[i].maxp.y - ent[i].minp.y) == 15) &&
@@ -49,7 +201,8 @@ void CkModel(vector<EntBox>ent)
 			bool on_offi = false;
 			bool bb9mm = (round(ent[i].maxp.x - ent[i].minp.x) == 9 || round(ent[i].maxp.z - ent[i].minp.z) == 9 || round(ent[i].maxp.y - ent[i].minp.y) == 9)
 				&& ent[i].Layer == Layer_beib && ent[i].Type == Solid&&bigfun2c(ent[i], 80);
-
+			// 灯与孔槽相撞
+			bool deng = isLamp(ent[i]);
 			for (int j = 0; j < ent.size(); j++)
 			{
 				// 1.判断孔位重叠相交 三/二 合一
@@ -60,13 +213,15 @@ void CkModel(vector<EntBox>ent)
 					CText(ent[i].center, _T("重孔?多孔?撞孔?"),0);
 				}
 				// 2.判断灯槽与孔位相撞 
-				if (BoxIntersectBox2(ExspansionEnt(ent[i]), ExspansionEnt(ent[j]))
-					&& isLamp(ent[i]) && isHole(ent[j]), 0)
+				if (deng&&isHole(ent[j]))
 				{
-
-					Arrow3dXY(ent[j].center, 30, 111);
-					CText(ent[j].center, _T("孔撞灯槽?"), 0);
+					if (BoxIntersectBox2(ExspansionEnt(ent[i],4), ExspansionEnt(ent[j])))
+					{
+						Arrow3dXY(ent[j].center, 30, 111);
+						CText(ent[j].center, _T("孔撞灯槽?"), 0);
+					}
 				}
+				
 				// 3.干涉检查1 只是柜体
 				if (Intervene(ent[i], ent[j]))
 				{
@@ -258,6 +413,12 @@ void CkModel(vector<EntBox>ent)
 		// 还有门缝5-18 门板上下对齐 左右对齐也要有
 		TestMjLs(ADDdoorArray, DrLsArry, MjArray);
 		//acutPrintf(_T("\n mj number:%d !"), MjArray.size());
+		
+	}
+	if (!shym.empty())
+	{
+		// 一定要改动
+		testFindContact(rec18data, receldata, shym, 2);
 	}
 	
 	acutPrintf(_T("\n Hello LF 计算量:%d !"), ent.size()*ent.size());
