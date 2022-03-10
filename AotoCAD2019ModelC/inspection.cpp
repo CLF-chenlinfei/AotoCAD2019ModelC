@@ -17,162 +17,81 @@ void CkModel(vector<EntBox>ent)
 	vector<EntBox> SHYArray; // 合成后的门板
 	vector<int> v; //数组集合，若不在集合内相加
 	vector<MyMj> MjArray;
-	vector<AcGePoint3d> DrLsArry;
-	// 实体数量必须有2个或者以上
-
-	// 暂时的三合一数据
-	std::vector<rec3d> rec18data; // 小面集合
-	std::vector<rec3d> receldata; // 大面集合
+	vector<AcGePoint3d> DrLsArry; // 拉手中心点集
 	std::vector<rec3d> shym;
+	std::vector<EntBox> entshy; // 三合一实体
+
+	// 新三合一检测
+	vector<RecBox> Marray;
 
 	if (!ent.empty())
 	{
 		for (int i = 0; i < ent.size(); i++)
 		{
-			//获取三合一
-			//////////////////////////////////////////////////////////////////////////
-			// 要改的
-			if (ent[i].Layer != Layer_door && 
-				((ent[i].volume > 1855 && ent[i].volume < 1857) || 
-				(ent[i].volume > 299 && ent[i].volume < 301)) && 
-				ent[i].Type == Solid)
+
+			// 这个是获取实体
+			if (ent[i].Layer != Layer_door && ((ent[i].volume > 999 && ent[i].volume < 1001) || (ent[i].volume > 299 && ent[i].volume < 301)) && ent[i].Type == Solid)
+				entshy.push_back(ent[i]);
+			// 这个是获三合一取面
+			if (ent[i].Layer != Layer_door && ((ent[i].volume > 1855 && ent[i].volume < 1857) || (ent[i].volume > 299 && ent[i].volume < 301)) &&ent[i].Type == Solid)
 			{
-
-				//29 c
-				rec3d rc1;
-				rec3d rc2;
-				rec3d rc3;
-				rec3d rc4;
-				//前 后 上 下
-				rc1.id = ent[i].id;
-				rc1.p1 = AcGePoint3d(ent[i].minp.x, ent[i].minp.y, ent[i].maxp.z);
-				rc1.p2 = ent[i].maxp;
-				rc1.dd = ent[i].maxp.z;
-				rc1.zx = 1;
-
-				rc2.id = ent[i].id;
-				rc2.p1 = ent[i].minp;
-				rc2.p2 = AcGePoint3d(ent[i].maxp.x, ent[i].maxp.y, ent[i].minp.z); rc2.dd = ent[i].minp.z;
-				rc2.zx = 1;
-
-				rc3.id = ent[i].id;
-				rc3.p1 = AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].minp.z);
-				rc3.p2 = ent[i].maxp; rc3.dd = ent[i].maxp.y;
-				rc3.zx = 2;
-
-				rc4.id = ent[i].id;
-				rc4.p1 = ent[i].minp;
-				rc4.p2 = AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].maxp.z); rc4.dd = ent[i].minp.y;
-				rc4.zx = 2;
-
-				rec3d rc5;
-				rc5.id = ent[i].id;
-				rc5.p1 = ent[i].minp;
-				rc5.p2 = AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].maxp.z); rc5.dd = ent[i].minp.x;
-				rc5.zx = 3;
-
-				rec3d rc6;
-				rc6.id = ent[i].id;
-				rc6.p1 = AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].minp.z);
-				rc6.p2 = ent[i].maxp; rc6.dd = ent[i].maxp.x;
-				rc6.zx = 3;
-				if ((int)(ent[i].maxp.x - ent[i].minp.x) == 29 ||
-					(int)(ent[i].maxp.x - ent[i].minp.x) == 12)
+				if ((int)(ent[i].maxp.x - ent[i].minp.x) == 29 || (int)(ent[i].maxp.x - ent[i].minp.x) == 12)
 				{
+					rec3d rc5 = { ent[i].id,ent[i].minp,AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].maxp.z),ent[i].minp.x,3,ent[i].Layer };
+					rec3d rc6 = { ent[i].id,AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].minp.z),ent[i].maxp,ent[i].maxp.x,3,ent[i].Layer };
 					shym.push_back(rc5);
 					shym.push_back(rc6);
 				}
-				if ((int)(ent[i].maxp.y - ent[i].minp.y) == 29
-					|| (int)(ent[i].maxp.y - ent[i].minp.y) == 12)
+				if ((int)(ent[i].maxp.y - ent[i].minp.y) == 29 || (int)(ent[i].maxp.y - ent[i].minp.y) == 12)
 				{
+					rec3d rc3 = { ent[i].id,AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].minp.z),ent[i].maxp,ent[i].maxp.y,2 ,ent[i].Layer };
+					rec3d rc4 = { ent[i].id,ent[i].minp,AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].maxp.z),ent[i].minp.y,2 ,ent[i].Layer };
 					shym.push_back(rc3);
 					shym.push_back(rc4);
 				}
-				if ((int)(ent[i].maxp.z - ent[i].minp.z) == 29
-					|| (int)(ent[i].maxp.z - ent[i].minp.z) == 12)
+				if ((int)(ent[i].maxp.z - ent[i].minp.z) == 29 || (int)(ent[i].maxp.z - ent[i].minp.z) == 12)
 				{
+					rec3d rc1 = { ent[i].id ,AcGePoint3d(ent[i].minp.x, ent[i].minp.y, ent[i].maxp.z),ent[i].maxp,ent[i].maxp.z,1 ,ent[i].Layer };
+					rec3d rc2 = { ent[i].id ,ent[i].minp,AcGePoint3d(ent[i].maxp.x, ent[i].maxp.y, ent[i].minp.z),ent[i].minp.z,1 ,ent[i].Layer };
 					shym.push_back(rc1);
 					shym.push_back(rc2);
 				}
 			}
 
-			// 获取18 非18面
+			// 获取18 非18面 集合box
 			int br18 = JudgeBord(ent[i]);
-			if (br18!=0)
+			if (br18 != 0)
 			{
-				rec3d rc1;
-				rec3d rc2;
-				rec3d rc3;
-				rec3d rc4;
-				rec3d rc5;
-				rec3d rc6;
-				//前 后 上 下
-				rc1.id = ent[i].id;
-				rc1.p1 = AcGePoint3d(ent[i].minp.x, ent[i].minp.y, ent[i].maxp.z);
-				rc1.p2 = ent[i].maxp;
-				rc1.dd = ent[i].maxp.z;
-				rc1.zx = 1;
-
-				rc2.id = ent[i].id;
-				rc2.p1 = ent[i].minp;
-				rc2.p2 = AcGePoint3d(ent[i].maxp.x, ent[i].maxp.y, ent[i].minp.z);
-				rc2.dd = ent[i].minp.z;
-				rc2.zx = 1;
-
-				rc3.id = ent[i].id;
-				rc3.p1 = AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].minp.z);
-				rc3.p2 = ent[i].maxp;
-				rc3.dd = ent[i].maxp.y;
-				rc3.zx = 2;
-
-				rc4.id = ent[i].id;
-				rc4.p1 = ent[i].minp;
-				rc4.p2 = AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].maxp.z);
-				rc4.dd = ent[i].minp.y;
-				rc4.zx = 2;
-
-				rc5.id = ent[i].id;
-				rc5.p1 = ent[i].minp;
-				rc5.p2 = AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].maxp.z);
-				rc5.dd = ent[i].minp.x;
-				rc5.zx = 3;
-
-				rc6.id = ent[i].id;
-				rc6.p1 = AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].minp.z);
-				rc6.p2 = ent[i].maxp;
-				rc6.dd = ent[i].maxp.x;
-				rc6.zx = 3;
+				RecBox p1;
 				if (br18 == 1)
 				{
-					rec18data.push_back(rc1);
-					rec18data.push_back(rc2);
-					rec18data.push_back(rc3);
-					rec18data.push_back(rc4);
-					receldata.push_back(rc5);
-					receldata.push_back(rc6);
-
+					p1.m18a = { ent[i].id ,AcGePoint3d(ent[i].minp.x, ent[i].minp.y, ent[i].maxp.z),ent[i].maxp,ent[i].maxp.z,1,ent[i].Layer };
+					p1.m18b = { ent[i].id ,ent[i].minp,AcGePoint3d(ent[i].maxp.x, ent[i].maxp.y, ent[i].minp.z),ent[i].minp.z,1 ,ent[i].Layer };
+					p1.m18c = { ent[i].id,AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].minp.z),ent[i].maxp,ent[i].maxp.y,2 ,ent[i].Layer };
+					p1.m18d = { ent[i].id,ent[i].minp,AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].maxp.z),ent[i].minp.y,2 ,ent[i].Layer };
+					p1.me18a = { ent[i].id,ent[i].minp,AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].maxp.z),ent[i].minp.x,3 ,ent[i].Layer };
+					p1.me18b = { ent[i].id,AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].minp.z),ent[i].maxp,ent[i].maxp.x,3,ent[i].Layer };
 				}
 				if (br18 == 2)
 				{
-					rec18data.push_back(rc1);
-					rec18data.push_back(rc2);
-					rec18data.push_back(rc5);
-					rec18data.push_back(rc6);
-					receldata.push_back(rc3);
-					receldata.push_back(rc4);
+					p1.m18a = { ent[i].id ,AcGePoint3d(ent[i].minp.x, ent[i].minp.y, ent[i].maxp.z),ent[i].maxp,ent[i].maxp.z,1,ent[i].Layer };
+					p1.m18b = { ent[i].id ,ent[i].minp,AcGePoint3d(ent[i].maxp.x, ent[i].maxp.y, ent[i].minp.z),ent[i].minp.z,1,ent[i].Layer };
+					p1.me18a = { ent[i].id,AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].minp.z),ent[i].maxp,ent[i].maxp.y,2 ,ent[i].Layer };
+					p1.me18b = { ent[i].id,ent[i].minp,AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].maxp.z),ent[i].minp.y,2,ent[i].Layer };
+					p1.m18c = { ent[i].id,ent[i].minp,AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].maxp.z),ent[i].minp.x,3,ent[i].Layer };
+					p1.m18d = { ent[i].id,AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].minp.z),ent[i].maxp,ent[i].maxp.x,3,ent[i].Layer };
 				}
 				if (br18 == 3)
 				{
-					rec18data.push_back(rc3);
-					rec18data.push_back(rc4);
-					rec18data.push_back(rc5);
-					rec18data.push_back(rc6);
-					receldata.push_back(rc1);
-					receldata.push_back(rc2);
+					p1.me18a = { ent[i].id ,AcGePoint3d(ent[i].minp.x, ent[i].minp.y, ent[i].maxp.z),ent[i].maxp,ent[i].maxp.z,1 ,ent[i].Layer };
+					p1.me18b= { ent[i].id ,ent[i].minp,AcGePoint3d(ent[i].maxp.x, ent[i].maxp.y, ent[i].minp.z),ent[i].minp.z,1,ent[i].Layer };
+					p1.m18c = { ent[i].id,AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].minp.z),ent[i].maxp,ent[i].maxp.y,2 ,ent[i].Layer };
+					p1.m18d = { ent[i].id,ent[i].minp,AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].maxp.z),ent[i].minp.y,2 ,ent[i].Layer };
+					p1.m18a = { ent[i].id,ent[i].minp,AcGePoint3d(ent[i].minp.x, ent[i].maxp.y, ent[i].maxp.z),ent[i].minp.x,3 ,ent[i].Layer };
+					p1.m18b = { ent[i].id,AcGePoint3d(ent[i].maxp.x, ent[i].minp.y, ent[i].minp.z),ent[i].maxp,ent[i].maxp.x,3 ,ent[i].Layer };
 				}
+				Marray.push_back(p1);
 			}
-			// 要改的
-			//////////////////////////////////////////////////////////////////////////
 			// 方向判断
 			int ifx = dec01(ent[i]);
 			// 7.检查衣通参数
@@ -412,14 +331,12 @@ void CkModel(vector<EntBox>ent)
 		// 检查项目有同门门铰位置不同
 		// 还有门缝5-18 门板上下对齐 左右对齐也要有
 		TestMjLs(ADDdoorArray, DrLsArry, MjArray);
-		//acutPrintf(_T("\n mj number:%d !"), MjArray.size());
-		
 	}
-	if (!shym.empty())
+
+	if (!entshy.empty())
 	{
-		// 一定要改动
-		testFindContact(rec18data, receldata, shym, 2);
+		// 
+		TestShyBord(Marray, entshy,shym);
 	}
-	
 	acutPrintf(_T("\n Hello LF 计算量:%d !"), ent.size()*ent.size());
 }

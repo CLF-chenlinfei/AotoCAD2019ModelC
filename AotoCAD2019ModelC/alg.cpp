@@ -696,7 +696,7 @@ int JudgeBord(const EntBox &p1)
 {
 	if (p1.Layer == Layer_door || p1.Layer == Layer_wjls || p1.Type != Solid)
 		return 0;
-	if (bigfun2c(p1,80)&&bigfun1c(p1, 298))
+	if (bigfun2c(p1,58)&&bigfun1c(p1, 198)&&p1.maxp.z>79)
 	{
 		if (round(p1.maxp.x - p1.minp.x) == 18 ||
 			round(p1.maxp.x - p1.minp.x) == 25 ||
@@ -969,142 +969,167 @@ bool judeRegion1(const rec3d &m1, double b1)
 	}
 	return k;
 }
-void testFindContact(std::vector<rec3d> &rec18data, std::vector<rec3d> &receldata, std::vector<rec3d> shym, int FB)
+
+// 面相交判断
+bool mxj(const rec3d &r1, const rec3d &r2, int fx)
 {
-	std::vector<mianAk> akarry;
-	for (int i = 0; i < rec18data.size(); i++)
+	// 要分大小面 r1 小面
+	// p1 创建数据时 传入的是小点
+	// Fb 是板件封边距离 扩大面域
+	double FB = 2;
+
+	recmo m1;
+	recmo m2;
+	
+	if (fx == 1) // 三面位置 1的时候位置左边点为 z
 	{
+		m1 = { r1.p1.x, r1.p1.y ,r1.p2.x, r1.p2.y };
+		m2 = { r2.p1.x - FB, r2.p1.y - FB ,r2.p2.x + FB, r2.p2.y + FB };
+	}
+	if (fx == 2)// 2的时候位置左边点为 y
+	{
+		m1 = { r1.p1.x, r1.p1.z ,r1.p2.x, r1.p2.z };
+		m2 = { r2.p1.x - FB, r2.p1.z - FB ,r2.p2.x + FB, r2.p2.z + FB };
+	}
+	if (fx == 3)// 3的时候位置左边点为 x
+	{
+		m1 = { r1.p1.y, r1.p1.z ,r1.p2.y, r1.p2.z };
+		m2 = { r2.p1.y - FB, r2.p1.z - FB ,r2.p2.y + FB, r2.p2.z + FB };
+	}
+	
+	if (MandM(m1, m2, 2)&&abs(r1.dd-r2.dd)<FB&&r1.zx==r2.zx&&r1.zx==fx&&r1.id!=r2.id)
+		return true;
+	return false;
 
-		// 轴向相同 大小面相交 无孔位面在相交面内
-		for (int j = 0; j < receldata.size(); j++)
+
+
+}
+
+bool newmim(const rec3d &r1, const rec3d &r2, int fx)
+{
+	// 要分大小面 r1 小面
+	// p1 创建数据时 传入的是小点
+	// Fb 是板件封边距离 扩大面域
+	double FB = 2;
+
+	recmo m1;
+	recmo m2;
+
+	if (fx == 1) // 三面位置 1的时候位置左边点为 z
+	{
+		m1 = { r1.p1.x, r1.p1.y ,r1.p2.x, r1.p2.y };
+		m2 = { r2.p1.x - FB, r2.p1.y - FB ,r2.p2.x + FB, r2.p2.y + FB };
+	}
+	if (fx == 2)// 2的时候位置左边点为 y
+	{
+		m1 = { r1.p1.x, r1.p1.z ,r1.p2.x, r1.p2.z };
+		m2 = { r2.p1.x - FB, r2.p1.z - FB ,r2.p2.x + FB, r2.p2.z + FB };
+	}
+	if (fx == 3)// 3的时候位置左边点为 x
+	{
+		m1 = { r1.p1.y, r1.p1.z ,r1.p2.y, r1.p2.z };
+		m2 = { r2.p1.y - FB, r2.p1.z - FB ,r2.p2.y + FB, r2.p2.z + FB };
+	}
+	// 中点是否在面域内
+	double center_x = (m1.x1 + m1.x11)/2;
+	double center_y = (m1.y2 + m1.y22)/2;
+	if (center_x>m2.x1&&center_x<m2.x11&& center_y>m2.y2&&center_y<m2.y22&&r1.id!=r2.id
+		&&r1.zx == r2.zx&&r1.zx == fx && abs(r1.dd - r2.dd) < FB)
+	
+		return true;
+	return false;
+}
+
+void TestShyBord(std::vector<RecBox> &marray, std::vector<EntBox> &shym, std::vector<rec3d> &shym2)
+{
+	std::vector<rec3d> pz18m; // 所有有碰撞的18面集合
+	std::vector<rec3d> km18array; // 所有有孔位的18面集合
+
+	for (int i = 0; i < marray.size(); i++)
+	{
+		
+		// 生成有孔位面18的集合
+		for (int j = 0; j < shym2.size(); j++)
 		{
-			if (!judeRegion1(rec18data[i], 70)) break;
-			mianAk s1;
-			if (rec18data[i].zx == receldata[j].zx &&
-				abs(rec18data[i].dd - receldata[j].dd) < FB  &&
-				rec18data[i].id != receldata[j].id)
+			if (mxj(shym2[j], marray[i].m18a, marray[i].m18a.zx))
+				km18array.push_back(marray[i].m18a);
+			if (mxj(shym2[j], marray[i].m18b, marray[i].m18b.zx))
+				km18array.push_back(marray[i].m18b);
+			if (mxj(shym2[j], marray[i].m18c, marray[i].m18c.zx))
+				km18array.push_back(marray[i].m18c);
+			if (mxj(shym2[j], marray[i].m18d, marray[i].m18d.zx))
+				km18array.push_back(marray[i].m18d);
+		}
+
+		// 生成有碰撞的集合
+		for (int j = 0; j < marray.size(); j++)
+		{
+			// 分隔4 次
+			if (marray[j].me18a.Layer!=Layer_beib)
 			{
-				// 这里判断到了两个面相交了
+				if (mxj(marray[i].m18a, marray[j].me18a, marray[i].m18a.zx))
+					pz18m.push_back(marray[i].m18a);
 
-				if (rec18data[i].zx == 1
-					&& rec18data[i].p2.y <= receldata[j].p2.y + FB
-					&& rec18data[i].p1.y >= receldata[j].p1.y - FB
-					&& rec18data[i].p1.x >= receldata[j].p1.x - FB
-
-					&& (abs(rec18data[i].p1.y - rec18data[i].p2.y) > 50 || abs(rec18data[i].p1.x - rec18data[i].p2.x) > 50)
-					&& rec18data[i].p2.x <= receldata[j].p2.x + FB)
-				{
-
-					for (int n = 0; n < shym.size(); n++)
-					{
-						if (rec18data[i].zx == shym[n].zx
-							&& abs(rec18data[i].dd - shym[n].dd) < FB
-							&& shym[n].p2.y < rec18data[i].p2.y
-							&& shym[n].p1.y > rec18data[i].p1.y
-							&& shym[n].p1.x > rec18data[i].p1.x
-							&& shym[n].p2.x < rec18data[i].p2.x)
-						{
-							s1.mian = rec18data[i];
-							s1.ji = 1;
-							akarry.push_back(s1);
-							break;
-						}
-						if (n == shym.size() - 1)
-						{
-							s1.mian = rec18data[i];
-							s1.ji = 2;
-							akarry.push_back(s1);
-						}
-
-					}
-					// 1 Z轴
-
-				}
-				if (rec18data[i].zx == 2
-					&& rec18data[i].p2.z <= receldata[j].p2.z + FB
-					&& rec18data[i].p1.z >= receldata[j].p1.z - FB
-					&& rec18data[i].p1.x >= receldata[j].p1.x - FB
-					&& rec18data[i].p2.x <= receldata[j].p2.x + FB)
-				{
-
-					for (int n = 0; n < shym.size(); n++)
-					{
-						if (rec18data[i].zx == shym[n].zx
-							&&abs(rec18data[i].dd - shym[n].dd) < FB
-							&& shym[n].p2.z < rec18data[i].p2.z
-							&& shym[n].p1.z > rec18data[i].p1.z
-							&& shym[n].p1.x > rec18data[i].p1.x
-							&& shym[n].p2.x < rec18data[i].p2.x)
-						{
-							s1.mian = rec18data[i];
-							s1.ji = 1;
-							akarry.push_back(s1);
-							break;
-						}
-						if (n == shym.size() - 1)
-						{
-							s1.mian = rec18data[i];
-							s1.ji = 2;
-							akarry.push_back(s1);
-						}
-					}
-					// 2 y轴
-
-				}
-				if (rec18data[i].zx == 3
-					&& rec18data[i].p2.y <= receldata[j].p2.y + FB
-					&& rec18data[i].p1.y >= receldata[j].p1.y - FB
-					&& rec18data[i].p1.z >= receldata[j].p1.z - FB
-					&& rec18data[i].p2.z <= receldata[j].p2.z + FB)
-				{
-
-					for (int n = 0; n < shym.size(); n++)
-					{
-						if (rec18data[i].zx == shym[n].zx
-							&&abs(rec18data[i].dd - shym[n].dd) < FB
-							&& shym[n].p2.y < rec18data[i].p2.y
-							&& shym[n].p1.y > rec18data[i].p1.y
-							&& shym[n].p1.z > rec18data[i].p1.z
-							&& shym[n].p2.z < rec18data[i].p2.z)
-						{
-							s1.mian = rec18data[i];
-							s1.ji = 1;
-							akarry.push_back(s1);
-							break;
-						}
-						if (n == shym.size() - 1)
-						{
-							s1.mian = rec18data[i];
-							s1.ji = 2;
-							akarry.push_back(s1);
-						}
-					}
-					// 3 x轴
-				}
+				if (mxj(marray[i].m18a, marray[j].me18b, marray[i].m18a.zx))
+					pz18m.push_back(marray[i].m18a);
+				// 分隔
+				if (mxj(marray[i].m18b, marray[j].me18a, marray[i].m18a.zx))
+					pz18m.push_back(marray[i].m18b);
+				if (mxj(marray[i].m18b, marray[j].me18b, marray[i].m18a.zx))
+					pz18m.push_back(marray[i].m18b);
+				// 分隔
+				if (mxj(marray[i].m18c, marray[j].me18a, marray[i].m18a.zx))
+					pz18m.push_back(marray[i].m18c);
+				if (mxj(marray[i].m18c, marray[j].me18b, marray[i].m18a.zx))
+					pz18m.push_back(marray[i].m18c);
+				// 分隔
+				if (mxj(marray[i].m18d, marray[j].me18a, marray[i].m18a.zx))
+					pz18m.push_back(marray[i].m18d);
+				if (mxj(marray[i].m18d, marray[j].me18b, marray[i].m18a.zx))
+					pz18m.push_back(marray[i].m18d);
 			}
 		}
 	}
-	for (int i = 0; i < akarry.size(); i++)
+	// 三合一膨胀系数 
+	// 画出漏孔的三合一面
+	double pzxs = 3.5;
+	for (int i = 0; i < pz18m.size(); i++)
 	{
-		int n = 1;
-
-		for (int x = 0; x < akarry.size(); x++)
+		EntBox entp;
+		entp.minp = pz18m[i].p1;
+		entp.maxp = pz18m[i].p2;
+		for (int j = 0; j < shym.size(); j++)
 		{
-			if (i != x && akarry[i].mian.id == akarry[x].mian.id)
+			// 三合一膨胀
+			if (BoxIntersectBox2(ExspansionEnt(shym[j], pzxs),entp)) break;
+			if (j==shym.size()-1)
 			{
-				if (akarry[x].ji == 1) {
-					n += 1;
-				}
-
+				CreateLine(pz18m[i].p1, pz18m[i].p2, 2);
+				Arrow3dXY(LineCenter(pz18m[i].p1, pz18m[i].p2), 35, 2);
 			}
 		}
-		if (n < 3 && akarry[i].ji == 2)
-		{
-			CreateLine(akarry[i].mian.p1, akarry[i].mian.p2, 3);
-			CreateBox(AcGePoint3d((akarry[i].mian.p2.x + akarry[i].mian.p1.x) / 2,
-				(akarry[i].mian.p2.y + akarry[i].mian.p1.y) / 2,
-				(akarry[i].mian.p2.z + akarry[i].mian.p1.z) / 2), 30, akarry[i].mian.zx);
 
+	}
+	// 检查板件尺寸错误 也是有孔但是不和非18面接触的
+	for (int i = 0; i < km18array.size(); i++)
+	{
+		for (int j = 0; j < marray.size(); j++)
+		{
+			if (newmim(km18array[i], marray[j].me18a, km18array[i].zx)) break;
+			if (newmim(km18array[i], marray[j].me18b, km18array[i].zx)) break;
+			if (newmim(km18array[i], marray[j].m18c, km18array[i].zx)) break;
+			if (newmim(km18array[i], marray[j].m18d, km18array[i].zx)) break;
+			if (newmim(km18array[i], marray[j].m18a, km18array[i].zx)) break;
+			if (newmim(km18array[i], marray[j].m18b, km18array[i].zx)) break;
+			if (j== marray.size()-1)
+			{
+				CreateLine(km18array[i].p1, km18array[i].p2, 3);
+				Arrow3dXY(LineCenter(km18array[i].p1, km18array[i].p2), 35, 3);
+				CText(LineCenter(km18array[i].p1, km18array[i].p2), _T("板件尺寸错误?"), 0);
+			}
+
+			
 		}
 	}
+
 }

@@ -49,6 +49,7 @@ struct rec3d
 	// dd 是位置数，如正面 max.y =dd, 顶面 max.z=dd
 	double dd;
 	int zx;
+	std::string Layer;
 };
 struct mianAk
 {
@@ -116,5 +117,16 @@ int JudgeBord(const EntBox &p1);
 
 void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vector<MyMj> &mj);
 
+struct RecBox
+{
+	rec3d m18a;
+	rec3d m18b;
+	rec3d m18c;
+	rec3d m18d;
+	rec3d me18a;
+	rec3d me18b;
+};
+
 // temp
-void testFindContact(std::vector<rec3d> &rec18data, std::vector<rec3d> &receldata, std::vector<rec3d> shym, int FB);
+//void testFindContact(std::vector<rec3d> &rec18data, std::vector<rec3d> &receldata, std::vector<rec3d> shym, int FB);
+void TestShyBord(std::vector<RecBox> &marray, std::vector<EntBox> &shym, std::vector<rec3d> &shym2);
