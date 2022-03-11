@@ -432,10 +432,16 @@ bool MinM(const recmo &m1, const recmo &m2, double pz)
 
 void CLs(const EntBox &p1, const EntBox &p2, int fx,int sx, const ACHAR* text)
 {
-	CreateLine(p1.center, p2.center, 120);
-	CreateArrow(p1.center, fx, sx, 120, 120);
-	CreateArrow(p2.center, fx, sx, 120, 120);
-	CText(LineCenter(p1.center, p2.center), text, fx);
+	AcGePoint3d center = AcGePoint3d((p1.maxp.x + p1.minp.x) / 2,
+		(p1.maxp.y + p1.minp.y) / 2, 
+		(p1.maxp.z + p1.minp.z) / 2);
+	AcGePoint3d center2 = AcGePoint3d((p2.maxp.x + p2.minp.x) / 2,
+		(p2.maxp.y + p2.minp.y) / 2,
+		(p2.maxp.z + p2.minp.z) / 2);
+	CreateLine(center, p2.center, 120);
+	CreateArrow(center, fx, sx, 120, 120);
+	CreateArrow(center2, fx, sx, 120, 120);
+	CText(LineCenter(center, center2), text, fx);
 
 }
 
@@ -725,6 +731,7 @@ void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vect
 	{
 		for (int i = 0; i < door.size(); i++)
 		{
+			
 			double value = 0;
 			AcGePoint3d pp;
 			for (int j = 0; j < mj.size(); j++)
@@ -779,39 +786,54 @@ void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vect
 				{
 					if (i != j
 						&& abs(drlist[i].DoorDt.minp.z - drlist[j].DoorDt.minp.z) < 9
-						&& abs(drlist[i].DoorDt.center.z - drlist[j].DoorDt.center.z) < 1
+						/*&& abs(drlist[i].DoorDt.center.z - drlist[j].DoorDt.center.z) < 1*/
 						&& abs(drlist[i].DoorDt.maxp.z - drlist[j].DoorDt.maxp.z) < 50
-						)
+						)		
 					{
+						std::vector<double> p11;
+						std::vector<double> p12;
+						//z 轴高度集合 用来比较
+						
 						for (int s = 0; s < drlist[j].lspoint.size(); s++)
 						{
-							for (int ss = 0; ss < drlist[i].lspoint.size(); ss++)
+							p11.push_back((int)(drlist[j].lspoint[s].z));
+						}
+						for (int s = 0; s < drlist[i].lspoint.size(); s++)
+						{
+							p12.push_back((int)(drlist[i].lspoint[s].z));
+						}
+			
+						for (int s = 0; s < p11.size(); s++)
+						{
+							for (int ss = 0; ss < p12.size(); ss++)
 							{
-								if (round(drlist[j].lspoint[s].z) == round(drlist[i].lspoint[ss].z))break;
-								if (ss == drlist[i].lspoint.size() - 1)
+								if (abs(p11[s] - p12[ss]) < 1)break;
+								if (ss==p12.size()-1)
 								{
-									errovec.push_back(drlist[j].lspoint[s]);
+									
+									CreateArrow(drlist[i].lspoint[s], 0, 0, 100, 100);
+									errovec.push_back(drlist[i].lspoint[s]);
 								}
 							}
 						}
 					}
 				}
 			}
-			if (errovec.size() == 1)
+			// 点集的均数
+			if (!errovec.empty())
 			{
-				CreateBox(errovec[0], 20, 110);
-			}
-
-			for (int i = 0; i < errovec.size(); i++)
-			{
-				CText(errovec[i], _T("    __拉手未对齐!"),0);
-				CreateArrow(errovec[i], 0, 0, 100, 100);
-				CreateArrow(errovec[i], 1, 0, 100, 100);
-				//Arrow3dXY(errovec[i], 22, 1);
-				/*if (i != 0)
+				double zx=0;
+				double zy=0;
+				double zz=0;
+				for (int s1 = 0; s1 < errovec.size(); s1++)
 				{
-					CreateLine(errovec[i - 1], errovec[i], 1);
-				}*/
+					zx += errovec[s1].x;
+					zy += errovec[s1].y;
+					zz += errovec[s1].z;
+				}
+				//+100是文字高度
+				CText(AcGePoint3d(zx/errovec.size(),zy/errovec.size(),zz/errovec.size()+60),
+					_T("拉手高度不同!"), dec01(drlist[0].DoorDt));
 			}
 		}
 	}
@@ -846,6 +868,7 @@ void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vect
 		{
 			// 判断的是z 大小点差值位置在18以内的
 			// 上下门缝不对齐
+			//CreateLine(door[i].maxp, door[i].minp, 1);
 			int mfx = dec01(door[x]);
 			int mfx1 = dec01(door[i]);
 			// y 方向 上下门缝不对齐
@@ -855,7 +878,7 @@ void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vect
 			{
 				double cz = abs(door[x].maxp.y - door[i].maxp.y);
 				double cz1 = abs(door[x].minp.y - door[i].minp.y);
-				if ((cz<18 && cz>0.5) || (cz1<18 && cz1>0.5))
+				if ((cz<18 && cz>1) || (cz1<18 && cz1>1))
 				{
 					CLs(door[x], door[i], mfx, 1, _T("_上下门缝未对齐!"));
 				}
@@ -867,7 +890,7 @@ void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vect
 			{
 				double cz = abs(door[x].maxp.x - door[i].maxp.x);
 				double cz1 = abs(door[x].minp.x - door[i].minp.x);
-				if ((cz<18 && cz>0.5) || (cz1<18 && cz1>0.5))
+				if ((cz<18 && cz>1) || (cz1<18 && cz1>1))
 				{
 					CLs(door[x], door[i], mfx, 1, _T("_上下门缝未对齐!"));
 				}

@@ -278,7 +278,7 @@ void CkModel(vector<EntBox>ent)
 				MjArray.push_back(np1);
 			}
 			// 生成合成门板集合
-			if (bigfun2c(newi) && iisdoor)ADDdoorArray.push_back(newi);
+			if (bigfun2c(newi) && iisdoor&&!bmj)ADDdoorArray.push_back(newi);
 			// 拉手集合生成
 			if (isLskwf(ent[i]))DrLsArry.push_back(ent[i].center);
 			// 画出9毫米背板未入槽
