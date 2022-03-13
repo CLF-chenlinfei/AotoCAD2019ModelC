@@ -265,3 +265,7 @@ void Database::GetModelSpaceExtent(AcDbDatabase *pDb)
 	acutPrintf(_T("运行耗时:%.2fs。"), (double)(end_time - start_time) / CLOCKS_PER_SEC);
 }
 
+//void Database::GetModelSpaceExtent2(AcDbDatabase *pDb)
+//{
+//	
+//}

@@ -24,6 +24,14 @@ struct TEntBox
 	
 };
 
+struct RBord
+{
+	// 状态判断
+	
+	double r;
+	AcGePoint3d center;
+};
+
 struct MyMj
 {
 	// 相交方式分为1上下，0左右
@@ -127,6 +135,12 @@ struct RecBox
 	rec3d me18b;
 };
 
-// temp
+
 //void testFindContact(std::vector<rec3d> &rec18data, std::vector<rec3d> &receldata, std::vector<rec3d> shym, int FB);
 void TestShyBord(std::vector<RecBox> &marray, std::vector<EntBox> &shym, std::vector<rec3d> &shym2);
+//
+void testbref(AcDbObjectId &id);
+// 
+int isbox(AcDbObjectId &id);
+
+RBord getRBord(AcDbObjectId &id);

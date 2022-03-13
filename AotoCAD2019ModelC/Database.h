@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 class Database
 {
 public:
@@ -18,7 +19,11 @@ public:
 	// 总目录6.1：获得模型空间的范围盒：数据库指针
 	static void GetModelSpaceExtent(AcDbDatabase *pDb =
 		acdbHostApplicationServices()->workingDatabase());
+	static void GetModelSpaceExtent2(AcDbDatabase *pDb =
+		acdbHostApplicationServices()->workingDatabase());
 };
+
+
 
 
 

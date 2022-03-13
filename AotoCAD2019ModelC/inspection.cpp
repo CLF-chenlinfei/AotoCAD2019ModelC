@@ -20,6 +20,7 @@ void CkModel(vector<EntBox>ent)
 	vector<AcGePoint3d> DrLsArry; // 拉手中心点集
 	std::vector<rec3d> shym;
 	std::vector<EntBox> entshy; // 三合一实体
+	std::vector<RBord> RArray; // 圆弧板件板件比较
 
 	// 新三合一检测
 	vector<RecBox> Marray;
@@ -122,8 +123,17 @@ void CkModel(vector<EntBox>ent)
 				&& ent[i].Layer == Layer_beib && ent[i].Type == Solid&&bigfun2c(ent[i], 80);
 			// 灯与孔槽相撞
 			bool deng = isLamp(ent[i]);
+			// 圆弧检查
+			int irb = isbox(ent[i].id);
+			if (irb==1)
+			{
+				RArray.push_back(getRBord(ent[i].id));
+
+			}
+
 			for (int j = 0; j < ent.size(); j++)
 			{
+				
 				// 1.判断孔位重叠相交 三/二 合一
 				if (judeMore(ent[i], ent[j]))
 				{
@@ -142,20 +152,32 @@ void CkModel(vector<EntBox>ent)
 				}
 				
 				// 3.干涉检查1 只是柜体
+				// 检查圆弧角度不一致
+
 				if (Intervene(ent[i], ent[j]))
 				{
-					Arrow3dXY(ent[j].center, 30, 112);
-					Arrow3dXY(ent[i].center, 30, 112);
-					CreateLine(ent[j].center, ent[i].center, 112);
-					CText(LineCenter(ent[j].center, ent[i].center), _T("干涉"), 0);
+					// 暂时只检查box
+					// 判断ij是box
+					if (isbox(ent[j].id)==0&&irb==0)
+					{
+						Arrow3dXY(ent[j].center, 30, 112);
+						Arrow3dXY(ent[i].center, 30, 112);
+						CreateLine(ent[j].center, ent[i].center, 112);
+						CText(LineCenter(ent[j].center, ent[i].center), _T("柜体干涉"), 0);
+					}			
 				}
 				// 4.干涉检查2 柜体和门板
 				if (DoorBIntervene(ent[i], ent[j]))
 				{
-					Arrow3dXY(ent[j].center, 30, 112);
-					Arrow3dXY(ent[i].center, 30, 112);
-					CreateLine(ent[j].center, ent[i].center, 112);
-					CText(LineCenter(ent[j].center, ent[i].center), _T("干涉2"), 0);
+					// 暂时只检查box
+					// 判断ij是box
+					if (isbox(ent[j].id)==0 && irb == 0)
+					{
+						Arrow3dXY(ent[j].center, 30, 112);
+						Arrow3dXY(ent[i].center, 30, 112);
+						CreateLine(ent[j].center, ent[i].center, 112);
+						CText(LineCenter(ent[j].center, ent[i].center), _T("柜体或门干涉"), 0);
+					}
 				}
 				// 5.干涉检查3 只是门板
 				if (DoorIntervene(ent[i], ent[j]))
@@ -332,11 +354,34 @@ void CkModel(vector<EntBox>ent)
 		// 还有门缝5-18 门板上下对齐 左右对齐也要有
 		TestMjLs(ADDdoorArray, DrLsArry, MjArray);
 	}
+	if (RArray.size()>1)
+	{
+		for (int i=0; i<RArray.size();i++)
+		{
+			for (int j = 0; j < RArray.size(); j++)
+			{
+				if (abs(RArray[i].r-RArray[j].r)>10)
+				{
+					Arrow3dXY(RArray[i].center, 30, 112);
+					Arrow3dXY(RArray[j].center, 30, 112);
+					CreateLine(RArray[i].center, RArray[j].center, 112);
+					CText(LineCenter(RArray[i].center, RArray[j].center), _T("圆弧半径不统一!"), 0);
+				}
+			}
+		}
+	}
 
 	if (!entshy.empty())
 	{
 		// 
 		TestShyBord(Marray, entshy,shym);
 	}
+	/*if (!ent.empty())
+	{
+		for (int i=0; i<ent.size();i++)
+		{
+			testbref(ent[i].id);
+		}
+	}*/
 	acutPrintf(_T("\n Hello LF 计算量:%d !"), ent.size()*ent.size());
 }

@@ -12,6 +12,7 @@ void AddCommands()
 {	// 添加AddLine命令，命令调用CreateLine函数
 	Editor::AddCommand(_T("ww"), ACRX_CMD_MODAL, CreateLine);
 	Editor::AddCommand(_T("dd"), ACRX_CMD_MODAL, remove0);
+	Editor::AddCommand(_T("rr"), ACRX_CMD_MODAL, remove0);
 	//Editor::AddCommand(_T("Addar"), ACRX_CMD_MODAL, CreateAr);
 	// 添加ChangeLineColor命令，命令调用ChangeColor函数
 	//Editor::AddCommand(_T("ChangeLineColor"), ACRX_CMD_MODAL, ChangeColor);
@@ -29,3 +30,7 @@ void remove0()
 	Database::deleteLayer(title);
 }
 
+void breftest()
+{
+
+}

@@ -6,6 +6,18 @@
 #include <algorithm>
 #include "CreateSome.h"
 
+#include "brbrep.h"
+
+#include "brbftrav.h"
+
+#include "brbetrav.h"
+
+#include "brface.h"
+
+#include "bredge.h"
+
+
+
 // 最大板件
 bool maxbord(const EntBox &p1)
 {
@@ -1155,4 +1167,358 @@ void TestShyBord(std::vector<RecBox> &marray, std::vector<EntBox> &shym, std::ve
 		}
 	}
 
+}
+
+// 0 正规6面体
+// 1 圆弧板件
+// 2 双面圆弧
+
+int isbox(AcDbObjectId &id)
+{
+	AcDbEntity *pEnt = NULL;
+
+	// 获取实体
+	if (acdbOpenObject(pEnt, id, AcDb::kForRead) == Acad::eOk)
+	{
+		//AcBrBrep brepEnt;
+
+		//brepEnt.set(*pEnt);
+
+		//acutPrintf(_T("st"));
+
+		////创建一个面的遍历器
+
+		//AcBr::ErrorStatus returnValue = AcBr::eOk;
+
+		//AcBrBrepEdgeTraverser  brepEdgeTrav;
+
+		//returnValue = brepEdgeTrav.setBrep(brepEnt);
+		AcBrBrep brepEnt;
+
+		brepEnt.set(*pEnt);
+
+		//创建一个面的遍历器
+
+		AcBr::ErrorStatus returnValue = AcBr::eOk;
+
+		AcBrBrepFaceTraverser  brepFaceTrav;
+
+		returnValue = brepFaceTrav.setBrep(brepEnt);
+
+		int m = 0;
+		int cy = 0;
+		//int nu = 0;
+
+		//int n = 0;
+		//double center;
+		double rr = 0;
+
+
+		while ((!brepFaceTrav.done()) && (returnValue == AcBr::eOk))
+
+		{
+
+			AcBrFace brFace;
+
+			AcBr::ErrorStatus es = brepFaceTrav.getFace(brFace);
+
+			if (es == AcBr::eOk)
+
+			{
+
+				AcGeSurface *pAcGeSurface;
+
+				brFace.getSurface(pAcGeSurface);
+
+				AcGeExternalBoundedSurface *ebSurf = (AcGeExternalBoundedSurface*)pAcGeSurface;
+
+				if (ebSurf != NULL)
+
+				{
+					if (ebSurf->isCylinder())
+					{
+						cy += 1;
+						cy += 1;
+						AcGeCylinder *pCylinder = (AcGeCylinder*)ebSurf;
+						if (rr != 0 && abs(rr - pCylinder->radius()) > 10)
+						{
+							CreateArrow(pCylinder->origin(), 1, 0, 1, 110);
+							CText(pCylinder->origin(), _T("此圆弧板 R 半径不一致!"), 0);
+						}
+						rr = pCylinder->radius();
+						//n += 1;
+					}
+					if (ebSurf->isPlane())
+					{
+						m += 1;
+					}
+					/*if (ebSurf->isNurbs())
+					{
+						nu += 1;
+					}*/
+					/*AcGeCylinder *pCylinder = (AcGeCylinder*)ebSurf;
+
+					acutPrintf(TEXT("\n圆柱面的信息:"));
+
+					acutPrintf(TEXT("\n半径:%.2f"), pCylinder->radius());
+
+					AcGePoint3d center = pCylinder->origin();
+
+					acutPrintf(TEXT("\n中心点：(%.2f,%2.f,%.2f)"), center.x, center.y, center.z);
+
+					AcGeVector3d axis = pCylinder->axisOfSymmetry();
+
+					acutPrintf(TEXT("\n轴线向量:(%.2f,%2.f,%.2f)"), axis.x, axis.y, axis.z);
+*/
+				}
+
+				delete pAcGeSurface;
+
+			}
+
+			returnValue = brepFaceTrav.next();
+
+		}
+
+		pEnt->close();
+		if (m == 6 && cy == 0)
+			return 0;
+		if (m == 6 && cy == 1)
+			return 1;
+		if (m == 6 && cy == 2)
+			return 2;
+	}
+	//acutPrintf(_T("\n 打不开盒子2?"));
+	return 999;
+}
+// 判断是否是圆弧板 并且检查单板件R 半径差值小于10
+RBord getRBord(AcDbObjectId &id)
+{
+	AcDbEntity *pEnt = NULL;
+	RBord bb;
+	// 获取实体
+	if (acdbOpenObject(pEnt, id, AcDb::kForRead) == Acad::eOk)
+	{
+		
+		AcBrBrep brepEnt;
+
+		brepEnt.set(*pEnt);
+
+		AcBr::ErrorStatus returnValue = AcBr::eOk;
+
+		AcBrBrepFaceTraverser  brepFaceTrav;
+
+		returnValue = brepFaceTrav.setBrep(brepEnt);
+
+		
+
+		while ((!brepFaceTrav.done()) && (returnValue == AcBr::eOk))
+
+		{
+
+			AcBrFace brFace;
+
+			AcBr::ErrorStatus es = brepFaceTrav.getFace(brFace);
+
+			if (es == AcBr::eOk)
+
+			{
+
+				AcGeSurface *pAcGeSurface;
+
+				brFace.getSurface(pAcGeSurface);
+
+				AcGeExternalBoundedSurface *ebSurf = (AcGeExternalBoundedSurface*)pAcGeSurface;
+
+				if (ebSurf != NULL&& ebSurf->isCylinder())
+
+				{
+					AcGeCylinder *pCylinder = (AcGeCylinder*)ebSurf;
+					bb.center = pCylinder->origin();
+					bb.r = pCylinder->radius();
+					/*if (ebSurf->isNurbs())
+					{
+						nu += 1;
+					}*/
+					/*AcGeCylinder *pCylinder = (AcGeCylinder*)ebSurf;
+
+					acutPrintf(TEXT("\n圆柱面的信息:"));
+
+					acutPrintf(TEXT("\n半径:%.2f"), pCylinder->radius());
+
+					AcGePoint3d center = pCylinder->origin();
+
+					acutPrintf(TEXT("\n中心点：(%.2f,%2.f,%.2f)"), center.x, center.y, center.z);
+
+					AcGeVector3d axis = pCylinder->axisOfSymmetry();
+
+					acutPrintf(TEXT("\n轴线向量:(%.2f,%2.f,%.2f)"), axis.x, axis.y, axis.z);
+*/
+				}
+
+				delete pAcGeSurface;
+
+			}
+
+			returnValue = brepFaceTrav.next();
+
+		}
+
+
+		//acutPrintf(_T("\n m:%d cy:%d nu:%d"), m, cy, nu);
+		pEnt->close();
+		return bb;
+	}
+	acutPrintf(_T("\n 打不开盒子1?"));
+	return bb;
+}
+
+
+void testbref(AcDbObjectId &id)
+{
+	AcDbEntity *pEnt = NULL;
+
+	// 获取实体
+	if (acdbOpenObject(pEnt, id, AcDb::kForRead) == Acad::eOk)
+	{
+		//AcBrBrep brepEnt;
+
+		//brepEnt.set(*pEnt);
+
+		//acutPrintf(_T("st"));
+
+		////创建一个面的遍历器
+
+		//AcBr::ErrorStatus returnValue = AcBr::eOk;
+
+		//AcBrBrepEdgeTraverser  brepEdgeTrav;
+
+		//returnValue = brepEdgeTrav.setBrep(brepEnt);
+		AcBrBrep brepEnt;
+
+		brepEnt.set(*pEnt);
+
+		//创建一个面的遍历器
+
+		AcBr::ErrorStatus returnValue = AcBr::eOk;
+
+		AcBrBrepFaceTraverser  brepFaceTrav;
+
+		returnValue = brepFaceTrav.setBrep(brepEnt);
+		
+		int m = 0;
+		int cy = 0;
+		int nu = 0;
+		
+		while ((!brepFaceTrav.done()) && (returnValue == AcBr::eOk))
+
+		{
+
+			AcBrFace brFace;
+
+			AcBr::ErrorStatus es = brepFaceTrav.getFace(brFace);
+
+			if (es == AcBr::eOk)
+
+			{
+
+				AcGeSurface *pAcGeSurface;
+
+				brFace.getSurface(pAcGeSurface);
+
+				AcGeExternalBoundedSurface *ebSurf = (AcGeExternalBoundedSurface*)pAcGeSurface;
+
+				if (ebSurf != NULL )
+
+				{
+					if (ebSurf->isCylinder())
+					{
+						cy+= 1;
+						AcGeCylinder *pCylinder = (AcGeCylinder*)ebSurf;
+
+						//acutPrintf(TEXT("\n圆柱面的信息:"));
+
+						acutPrintf(TEXT("\n 圆弧半径半径:%.2f, %d"), pCylinder->radius(),id);
+
+						/*AcGePoint3d center = pCylinder->origin();
+
+						acutPrintf(TEXT("\n中心点：(%.2f,%2.f,%.2f)"), center.x, center.y, center.z);
+
+						AcGeVector3d axis = pCylinder->axisOfSymmetry();
+
+						acutPrintf(TEXT("\n轴线向量:(%.2f,%2.f,%.2f)"), axis.x, axis.y, axis.z);*/
+
+					}
+					if (ebSurf->isPlane())
+					{
+						m += 1;
+					}
+					if (ebSurf->isNurbs())
+					{
+						nu += 1;
+					}
+		
+				}
+
+				delete pAcGeSurface;
+
+			}
+
+			returnValue = brepFaceTrav.next();
+
+		}
+
+
+		/*if (returnValue == AcBr::eOk)
+
+		{
+
+			while ((!brepEdgeTrav.done()) && (returnValue == AcBr::eOk))
+
+			{
+
+				AcBrEdge brEdge;
+
+				brepEdgeTrav.getEdge(brEdge);
+
+				AcGeCurve3d *pGeCurve = NULL;
+
+				if (brEdge.getCurve(pGeCurve) == AcBr::eOk)
+
+				{
+
+					AcGeCurve3d *pNativeCurve = NULL;
+
+					Adesk::Boolean bRet = ((AcGeExternalCurve3d*)pGeCurve)->isNativeCurve(pNativeCurve);
+
+					int numSample = 180;
+
+					AcGePoint3dArray points;
+
+					pNativeCurve->getSamplePoints(numSample, points);
+
+					if (pNativeCurve->isClosed() && points.length() > 0)
+
+					{
+						points.append(points[0]);
+						acutPrintf(_T("/n sssst:%d "),points.length());
+						Arrow3dXY(points[0], 3, 122);
+					}
+
+					delete pNativeCurve;
+
+					delete pGeCurve;
+				}
+
+				returnValue = brepEdgeTrav.next();
+
+			}
+
+
+
+		}*/
+		acutPrintf(_T("\n m:%d cy:%d nu:%d"), m, cy, nu);
+		pEnt->close();
+	}
+	//建立一个BREP对象
 }
