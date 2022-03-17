@@ -24,7 +24,6 @@ void CkModel(vector<EntBox>ent)
 
 	// 新三合一检测
 	vector<RecBox> Marray;
-
 	if (!ent.empty())
 	{
 		for (int i = 0; i < ent.size(); i++)
@@ -350,9 +349,45 @@ void CkModel(vector<EntBox>ent)
 
 	if (!ADDdoorArray.empty())
 	{
+		std::vector<int> v; //数组集合，若不在集合内相加
+		std::vector<EntBox> NewAddDoorArray; //数组集合，若不在集合内相加
+
+		for (int i = 0; i < ADDdoorArray.size(); i++)
+		{
+			if (std::find(v.begin(), v.end(), i) == v.end())
+			{
+				for (int j = 0; j < ADDdoorArray.size(); j++)
+				{
+					// 相切相交 加起来 ihej
+					if (i != j && (BoxTangencyBox(ADDdoorArray[i], ADDdoorArray[j]) ||
+						BoxIntersectBox(ADDdoorArray[i], ADDdoorArray[j], 0) ||
+						EquaPoint(ADDdoorArray[i].maxp, ADDdoorArray[j].maxp) ||
+						EquaPoint(ADDdoorArray[i].minp, ADDdoorArray[j].minp)))
+					{
+						v.push_back(i);
+						v.push_back(j);
+						ADDdoorArray[i].maxp = 
+							AcGePoint3d(max(ADDdoorArray[i].maxp.x, ADDdoorArray[j].maxp.x),
+								max(ADDdoorArray[i].maxp.y, ADDdoorArray[j].maxp.y),
+								max(ADDdoorArray[i].maxp.z, ADDdoorArray[j].maxp.z));
+						ADDdoorArray[i].minp =
+							AcGePoint3d(min(ADDdoorArray[i].minp.x, ADDdoorArray[j].minp.x),
+								min(ADDdoorArray[i].minp.y, ADDdoorArray[j].minp.y),
+								min(ADDdoorArray[i].minp.z, ADDdoorArray[j].minp.z));
+					}
+
+				}
+				ADDdoorArray[i].center = 
+					AcGePoint3d((ADDdoorArray[i].maxp.x + ADDdoorArray[i].minp.x) / 2,
+					(ADDdoorArray[i].maxp.y + ADDdoorArray[i].minp.y) / 2,
+						(ADDdoorArray[i].maxp.z + ADDdoorArray[i].minp.z) / 2);
+
+				NewAddDoorArray.push_back(ADDdoorArray[i]);
+			}
+		}
 		// 检查项目有同门门铰位置不同
 		// 还有门缝5-18 门板上下对齐 左右对齐也要有
-		TestMjLs(ADDdoorArray, DrLsArry, MjArray);
+		TestMjLs(NewAddDoorArray, DrLsArry, MjArray);
 	}
 	if (RArray.size()>1)
 	{

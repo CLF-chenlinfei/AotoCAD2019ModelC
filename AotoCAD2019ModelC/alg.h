@@ -65,7 +65,7 @@ struct mianAk
 	int ji;
 };
 //
-
+bool EquaPoint(const AcGePoint3d &p1, const AcGePoint3d &p2);
 bool isLskwf(const EntBox &p1);
 TEntBox CreaterMJ(const EntBox &mj);
 bool maxbord(const EntBox &p1);
@@ -144,3 +144,6 @@ void testbref(AcDbObjectId &id);
 int isbox(AcDbObjectId &id);
 
 RBord getRBord(AcDbObjectId &id);
+
+// 要剔除的实体，收口条和抽侧条
+bool tcbord(const EntBox &p1);

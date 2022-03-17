@@ -450,9 +450,9 @@ void CLs(const EntBox &p1, const EntBox &p2, int fx,int sx, const ACHAR* text)
 	AcGePoint3d center2 = AcGePoint3d((p2.maxp.x + p2.minp.x) / 2,
 		(p2.maxp.y + p2.minp.y) / 2,
 		(p2.maxp.z + p2.minp.z) / 2);
-	CreateLine(center, p2.center, 120);
-	CreateArrow(center, fx, sx, 120, 120);
-	CreateArrow(center2, fx, sx, 120, 120);
+	CreateLine(center, p2.center, 90);
+	CreateArrow(center, fx, sx, 120, 90);
+	CreateArrow(center2, fx, sx, 120, 90);
 	CText(LineCenter(center, center2), text, fx);
 
 }
@@ -582,7 +582,7 @@ int TestYt2(const EntBox &p1, const EntBox &p2)
 bool isMj(const EntBox &p1)
 {
 	if (((p1.volume > 16537 && p1.volume < 16538) || (p1.volume > 17149 && p1.volume < 17151))
-		&& p1.Type == Solid && p1.Layer == Layer_door &&
+		&& p1.Type == Solid &&
 		((int)(p1.maxp.x - p1.minp.x - 0.1) == 13 || (int)(p1.maxp.y - p1.minp.y - 0.1) == 13 || (int)(p1.maxp.z - p1.minp.z - 0.1) == 13)
 		)return true;
 	return false;
@@ -714,7 +714,7 @@ int JudgeBord(const EntBox &p1)
 {
 	if (p1.Layer == Layer_door || p1.Layer == Layer_wjls || p1.Type != Solid)
 		return 0;
-	if (bigfun2c(p1,58)&&bigfun1c(p1, 198)&&p1.maxp.z>79)
+	if (bigfun2c(p1,47)&&bigfun1c(p1, 188)&&p1.maxp.z>79)
 	{
 		if (round(p1.maxp.x - p1.minp.x) == 18 ||
 			round(p1.maxp.x - p1.minp.x) == 25 ||
@@ -854,7 +854,7 @@ void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vect
 
 	for (int x = 0; x < door.size(); x++)
 	{
-
+		
 		// 这里来判断54 拉手里地面高度1600 的基准向上向下
 		for (int s = 0; s < ls.size(); s++)
 		{
@@ -876,6 +876,7 @@ void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vect
 			}
 		}
 		//上下左右门缝未对齐!
+		//CreateLine(door[x].maxp, door[x].minp, 2);
 		for (int i = 0; i < door.size(); i++)
 		{
 			// 判断的是z 大小点差值位置在18以内的
@@ -938,10 +939,11 @@ void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vect
 			{
 				double bcz = abs(door[x].maxp.x - door[i].minp.x);
 				double xcz = abs(door[x].minp.x - door[i].maxp.x);
+				double ycha = abs(door[x].maxp.y - door[i].maxp.y);
 				double p1z = door[x].center.z< door[i].maxp.z&&door[x].center.z > door[i].minp.z;
 				double p2z = door[i].center.z< door[x].maxp.z&&door[i].center.z > door[x].minp.z;
 
-				if (((bcz < 18 && bcz>5) || (xcz < 18 && xcz>5))&&(p1z||p2z))
+				if (((bcz < 18 && bcz>5) || (xcz < 18 && xcz>5))&&(p1z||p2z)&&ycha<20)
 				{
 					CLs(door[x], door[i], mfx, 0, _T("_门缝大于4!"));
 				}
@@ -952,8 +954,8 @@ void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vect
 				double xcz = abs(door[x].minp.y - door[i].maxp.y);
 				double p1z = door[x].center.z< door[i].maxp.z&&door[x].center.z > door[i].minp.z;
 				double p2z = door[i].center.z< door[x].maxp.z&&door[i].center.z > door[x].minp.z;
-
-				if (((bcz < 18 && bcz>5) || (xcz < 18 && xcz>5)) && (p1z || p2z))
+				double xcha = abs(door[x].maxp.y - door[i].maxp.y);
+				if (((bcz < 18 && bcz>5) || (xcz < 18 && xcz>5)) && (p1z || p2z)&&xcha<20)
 				{
 					CLs(door[x], door[i], mfx, 0, _T("_门缝大于4!"));
 				}
@@ -1031,6 +1033,7 @@ bool mxj(const rec3d &r1, const rec3d &r2, int fx)
 		m1 = { r1.p1.y, r1.p1.z ,r1.p2.y, r1.p2.z };
 		m2 = { r2.p1.y - FB, r2.p1.z - FB ,r2.p2.y + FB, r2.p2.z + FB };
 	}
+	//
 	
 	if (MandM(m1, m2, 2)&&abs(r1.dd-r2.dd)<FB&&r1.zx==r2.zx&&r1.zx==fx&&r1.id!=r2.id)
 		return true;
@@ -1065,24 +1068,68 @@ bool newmim(const rec3d &r1, const rec3d &r2, int fx)
 		m1 = { r1.p1.y, r1.p1.z ,r1.p2.y, r1.p2.z };
 		m2 = { r2.p1.y - FB, r2.p1.z - FB ,r2.p2.y + FB, r2.p2.z + FB };
 	}
+	bool s2 = MandM(m1, m2,-3);
 	// 中点是否在面域内
 	double center_x = (m1.x1 + m1.x11)/2;
 	double center_y = (m1.y2 + m1.y22)/2;
-	if (center_x>m2.x1&&center_x<m2.x11&& center_y>m2.y2&&center_y<m2.y22&&r1.id!=r2.id
+	if (s2&&
+		r1.id!=r2.id
 		&&r1.zx == r2.zx&&r1.zx == fx && abs(r1.dd - r2.dd) < FB)
 	
 		return true;
 	return false;
 }
 
+// 剔除面
+bool tcm(const rec3d &r1, int fx)
+{
+	recmo m1;
+
+	if (fx == 1) // 三面位置 1的时候位置左边点为 z
+	{
+		m1 = { r1.p1.x, r1.p1.y ,r1.p2.x, r1.p2.y };
+		
+	}
+	if (fx == 2)// 2的时候位置左边点为 y
+	{
+		m1 = { r1.p1.x, r1.p1.z ,r1.p2.x, r1.p2.z };
+		
+	}
+	if (fx == 3)// 3的时候位置左边点为 x
+	{
+		m1 = { r1.p1.y, r1.p1.z ,r1.p2.y, r1.p2.z };
+	}
+	double w1 = abs(m1.x1 - m1.x11);
+	double w2 = abs(m1.y2 - m1.y22);
+	if (w1 < 70 && w2 < 70 && r1.Layer == Layer_skt) return true;
+	return false;
+}
+// 剔除实体
+bool tcbox(const EntBox &p1)
+{
+	if (p1.Layer==Layer_skt)
+	{
+		bool x1 = abs(p1.maxp.x - p1.minp.x) < 70;
+		bool x2 = abs(p1.maxp.y - p1.minp.y) < 70;
+		bool x3 = abs(p1.maxp.z - p1.minp.z) < 70;
+		if (x1&&x2&&x3) return true;
+	}
+	return false;
+
+}
+
 void TestShyBord(std::vector<RecBox> &marray, std::vector<EntBox> &shym, std::vector<rec3d> &shym2)
 {
 	std::vector<rec3d> pz18m; // 所有有碰撞的18面集合
 	std::vector<rec3d> km18array; // 所有有孔位的18面集合
-
+	
+	
 	for (int i = 0; i < marray.size(); i++)
 	{
-		
+		/*CreateLine(marray[i].m18a.p1, marray[i].m18a.p2, 2);
+		CreateLine(marray[i].m18b.p1, marray[i].m18b.p2, 2);
+		CreateLine(marray[i].m18c.p1, marray[i].m18c.p2, 2);
+		CreateLine(marray[i].m18d.p1, marray[i].m18.p2, 2);*/
 		// 生成有孔位面18的集合
 		for (int j = 0; j < shym2.size(); j++)
 		{
@@ -1102,48 +1149,52 @@ void TestShyBord(std::vector<RecBox> &marray, std::vector<EntBox> &shym, std::ve
 			// 分隔4 次
 			if (marray[j].me18a.Layer!=Layer_beib)
 			{
-				if (mxj(marray[i].m18a, marray[j].me18a, marray[i].m18a.zx))
+				if (newmim(marray[i].m18a, marray[j].me18a, marray[i].m18a.zx))
 					pz18m.push_back(marray[i].m18a);
 
-				if (mxj(marray[i].m18a, marray[j].me18b, marray[i].m18a.zx))
+				if (newmim(marray[i].m18a, marray[j].me18b, marray[i].m18a.zx))
 					pz18m.push_back(marray[i].m18a);
 				// 分隔
-				if (mxj(marray[i].m18b, marray[j].me18a, marray[i].m18a.zx))
+				if (newmim(marray[i].m18b, marray[j].me18a, marray[i].m18b.zx))
 					pz18m.push_back(marray[i].m18b);
-				if (mxj(marray[i].m18b, marray[j].me18b, marray[i].m18a.zx))
+				if (newmim(marray[i].m18b, marray[j].me18b, marray[i].m18b.zx))
 					pz18m.push_back(marray[i].m18b);
 				// 分隔
-				if (mxj(marray[i].m18c, marray[j].me18a, marray[i].m18a.zx))
+				if (newmim(marray[i].m18c, marray[j].me18a, marray[i].m18c.zx))
 					pz18m.push_back(marray[i].m18c);
-				if (mxj(marray[i].m18c, marray[j].me18b, marray[i].m18a.zx))
+				if (newmim(marray[i].m18c, marray[j].me18b, marray[i].m18c.zx))
 					pz18m.push_back(marray[i].m18c);
 				// 分隔
-				if (mxj(marray[i].m18d, marray[j].me18a, marray[i].m18a.zx))
+				if (newmim(marray[i].m18d, marray[j].me18a, marray[i].m18d.zx))
 					pz18m.push_back(marray[i].m18d);
-				if (mxj(marray[i].m18d, marray[j].me18b, marray[i].m18a.zx))
+				if (newmim(marray[i].m18d, marray[j].me18b, marray[i].m18d.zx))
 					pz18m.push_back(marray[i].m18d);
 			}
 		}
 	}
+
 	// 三合一膨胀系数 
 	// 画出漏孔的三合一面
 	double pzxs = 3.5;
+	//acutPrintf(_T("\n碰撞面数量:%d"), pz18m.size());
 	for (int i = 0; i < pz18m.size(); i++)
 	{
+		//CreateLine(pz18m[i].p1, pz18m[i].p2, 12);
 		EntBox entp;
 		entp.minp = pz18m[i].p1;
 		entp.maxp = pz18m[i].p2;
+		entp.Layer = pz18m[i].Layer;
 		for (int j = 0; j < shym.size(); j++)
 		{
+			//CreateLine(shym[j].minp, shym[j].maxp, 2);
 			// 三合一膨胀
-			if (BoxIntersectBox2(ExspansionEnt(shym[j], pzxs),entp)) break;
+			if (BoxIntersectBox2(ExspansionEnt(shym[j], pzxs),entp)|| tcbox(entp)) break;
 			if (j==shym.size()-1)
 			{
 				CreateLine(pz18m[i].p1, pz18m[i].p2, 2);
-				Arrow3dXY(LineCenter(pz18m[i].p1, pz18m[i].p2), 35, 2);
+				CreateBox(LineCenter(pz18m[i].p1, pz18m[i].p2), 30, 2);
 			}
 		}
-
 	}
 	// 检查板件尺寸错误 也是有孔但是不和非18面接触的
 	for (int i = 0; i < km18array.size(); i++)
@@ -1160,10 +1211,8 @@ void TestShyBord(std::vector<RecBox> &marray, std::vector<EntBox> &shym, std::ve
 			{
 				CreateLine(km18array[i].p1, km18array[i].p2, 3);
 				Arrow3dXY(LineCenter(km18array[i].p1, km18array[i].p2), 35, 3);
-				CText(LineCenter(km18array[i].p1, km18array[i].p2), _T("板件尺寸错误?"), 0);
-			}
-
-			
+				CText(LineCenter(km18array[i].p1, km18array[i].p2), _T("多孔?"), 0);
+			}	
 		}
 	}
 
