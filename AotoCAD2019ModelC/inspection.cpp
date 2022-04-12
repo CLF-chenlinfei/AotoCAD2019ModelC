@@ -15,6 +15,8 @@ void CkModel(vector<EntBox>ent)
 {
 	vector<EntBox> ADDdoorArray; // 合成后的门板
 	vector<EntBox> SHYArray; // 合成后的门板
+	vector<EntBox> SHYArrayH; // 横向三合一
+	//vector<EntBox> SHYArrayS; // 竖向三合一
 	vector<int> v; //数组集合，若不在集合内相加
 	vector<MyMj> MjArray;
 	vector<AcGePoint3d> DrLsArry; // 拉手中心点集
@@ -28,6 +30,29 @@ void CkModel(vector<EntBox>ent)
 	{
 		for (int i = 0; i < ent.size(); i++)
 		{
+			//获取竖向三和一
+			int int3 = isShy(ent[i]);
+			/*if (int3 == 1)
+			{
+				EntBox nshy = ent[i];
+				nshy.maxp.z = ent[i].maxp.z+10;
+				nshy.minp.z = ent[i].minp.z-10;
+				SHYArrayS.push_back(nshy);
+			}*/
+			if (int3 == 2)
+			{
+				EntBox nshy = ent[i];
+				nshy.maxp.x = ent[i].maxp.x + 5;
+				nshy.minp.x = ent[i].minp.x - 5;
+				SHYArrayH.push_back(nshy);
+			}
+			if (int3 == 3)
+			{
+				EntBox nshy = ent[i];
+				nshy.maxp.y = ent[i].maxp.y + 5;
+				nshy.minp.y = ent[i].minp.y - 5;
+				SHYArrayH.push_back(nshy);
+			}
 
 			// 这个是获取实体
 			if (ent[i].Layer != Layer_door && ((ent[i].volume > 999 && ent[i].volume < 1001) || (ent[i].volume > 299 && ent[i].volume < 301)) && ent[i].Type == Solid)
@@ -129,9 +154,20 @@ void CkModel(vector<EntBox>ent)
 				RArray.push_back(getRBord(ent[i].id));
 
 			}
-
+			
 			for (int j = 0; j < ent.size(); j++)
 			{
+				// 活动层板拉槽
+				if (bb9mm&&testhclc(ent[j]))
+				{
+					// 腐蚀相交检查
+					if (BoxIntersectBox2(ExspansionEnt(ent[i], -2), ExspansionEnt(ent[j], -2)))
+					{
+						CreateArrow(ent[j].center, 0, 0, 110, 100);
+						CreateArrow(ent[j].center, 1, 0, 110, 100);
+						CText(ent[j].center, _T("活层拉槽错误!"), 0);
+					}
+				}
 				
 				// 1.判断孔位重叠相交 三/二 合一
 				if (judeMore(ent[i], ent[j]))
@@ -409,7 +445,7 @@ void CkModel(vector<EntBox>ent)
 	if (!entshy.empty())
 	{
 		// 
-		TestShyBord(Marray, entshy,shym);
+		TestShyBord(Marray, entshy,shym, SHYArrayH);
 	}
 	/*if (!ent.empty())
 	{

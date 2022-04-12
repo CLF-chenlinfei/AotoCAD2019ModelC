@@ -193,6 +193,33 @@ bool bigfun3c(const EntBox &p1, int wd)
 
 }
 
+// 三合一判断
+int isShy(const EntBox &p1)
+{
+	if (round(p1.volume) == 1856)
+	{
+		if (round(p1.maxp.z - p1.minp.z) == 29)
+		{
+			// 1 为竖
+			return 1;
+		}
+		if (round(p1.maxp.x - p1.minp.x) == 29)
+		{
+			// 1 为竖
+			return 2;
+		}
+		if (round(p1.maxp.y - p1.minp.y) == 29)
+		{
+			// 1 为竖
+			return 3;
+		}
+		// 横着
+		return 0;
+	}
+	// 并不是
+	return 0;
+}
+
 // 1边大于某数
 bool bigfun1c(const EntBox &p1, int wd)
 {
@@ -876,6 +903,7 @@ void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vect
 			}
 		}
 		//上下左右门缝未对齐!
+		double mcz = 0.5;
 		//CreateLine(door[x].maxp, door[x].minp, 2);
 		for (int i = 0; i < door.size(); i++)
 		{
@@ -891,7 +919,7 @@ void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vect
 			{
 				double cz = abs(door[x].maxp.y - door[i].maxp.y);
 				double cz1 = abs(door[x].minp.y - door[i].minp.y);
-				if ((cz<18 && cz>1) || (cz1<18 && cz1>1))
+				if ((cz<18 && cz>mcz) || (cz1<18 && cz1>mcz))
 				{
 					CLs(door[x], door[i], mfx, 1, _T("_上下门缝未对齐!"));
 				}
@@ -903,7 +931,7 @@ void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vect
 			{
 				double cz = abs(door[x].maxp.x - door[i].maxp.x);
 				double cz1 = abs(door[x].minp.x - door[i].minp.x);
-				if ((cz<18 && cz>1) || (cz1<18 && cz1>1))
+				if ((cz<18 && cz>mcz) || (cz1<18 && cz1>mcz))
 				{
 					CLs(door[x], door[i], mfx, 1, _T("_上下门缝未对齐!"));
 				}
@@ -916,7 +944,7 @@ void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vect
 				// 小点z轴高度差值
 				double cz = abs(door[x].maxp.z - door[i].maxp.z);
 				double cz1 = abs(door[x].minp.z - door[i].minp.z);
-				if ((cz < 18 && cz>1) || (cz1 < 18 && cz1>1))
+				if ((cz < 18 && cz>mcz) || (cz1 < 18 && cz1>mcz))
 				{
 					CLs(door[x], door[i], mfx, 0, _T("_左右门缝未对齐!"));
 				}
@@ -929,7 +957,7 @@ void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vect
 				// 小点z轴高度差值
 				double cz = abs(door[x].maxp.z - door[i].maxp.z);
 				double cz1 = abs(door[x].minp.z - door[i].minp.z);
-				if ((cz < 18 && cz>1) || (cz1 < 18 && cz1>1))
+				if ((cz < 18 && cz>mcz) || (cz1 < 18 && cz1>mcz))
 				{
 					CLs(door[x], door[i], mfx, 0, _T("_左右门缝未对齐!"));
 				}
@@ -1118,10 +1146,28 @@ bool tcbox(const EntBox &p1)
 
 }
 
-void TestShyBord(std::vector<RecBox> &marray, std::vector<EntBox> &shym, std::vector<rec3d> &shym2)
+// 创建三合一实体
+EntBox creatorE(const rec3d &p1)
+{
+	EntBox np;
+	np.id = p1.id;
+	// 大小点xy 规律是？ 小点xy变大
+	np.minp.z = p1.p1.z - 10;
+	np.minp.x = p1.p1.x + 4;
+	np.minp.y = p1.p1.y + 4;
+	np.maxp.z = p1.p2.z + 10;
+	np.maxp.x = p1.p2.x - 4;
+	np.maxp.y = p1.p2.y - 4;
+	return np;
+}
+
+void TestShyBord(std::vector<RecBox> &marray, std::vector<EntBox> &shym, 
+	std::vector<rec3d> &shym2, std::vector<EntBox> &shyh)
 {
 	std::vector<rec3d> pz18m; // 所有有碰撞的18面集合
 	std::vector<rec3d> km18array; // 所有有孔位的18面集合
+	std::vector<rec3d> shys; // 所有有孔位的18面集合
+
 	
 	
 	for (int i = 0; i < marray.size(); i++)
@@ -1130,6 +1176,7 @@ void TestShyBord(std::vector<RecBox> &marray, std::vector<EntBox> &shym, std::ve
 		CreateLine(marray[i].m18b.p1, marray[i].m18b.p2, 2);
 		CreateLine(marray[i].m18c.p1, marray[i].m18c.p2, 2);
 		CreateLine(marray[i].m18d.p1, marray[i].m18.p2, 2);*/
+
 		// 生成有孔位面18的集合
 		for (int j = 0; j < shym2.size(); j++)
 		{
@@ -1196,25 +1243,68 @@ void TestShyBord(std::vector<RecBox> &marray, std::vector<EntBox> &shym, std::ve
 			}
 		}
 	}
-	// 检查板件尺寸错误 也是有孔但是不和非18面接触的
+	// 检查孔位碰撞
+
+	// 去重
+	std::vector<AcDbObjectId> id_list;
+	std::vector<AcDbObjectId> erid_list;
 	for (int i = 0; i < km18array.size(); i++)
 	{
-		for (int j = 0; j < marray.size(); j++)
+		
+		if (abs(km18array[i].p1.z - km18array[i].p2.z) < 1)
 		{
-			if (newmim(km18array[i], marray[j].me18a, km18array[i].zx)) break;
-			if (newmim(km18array[i], marray[j].me18b, km18array[i].zx)) break;
-			if (newmim(km18array[i], marray[j].m18c, km18array[i].zx)) break;
-			if (newmim(km18array[i], marray[j].m18d, km18array[i].zx)) break;
-			if (newmim(km18array[i], marray[j].m18a, km18array[i].zx)) break;
-			if (newmim(km18array[i], marray[j].m18b, km18array[i].zx)) break;
-			if (j== marray.size()-1)
+			
+			if (std::find(id_list.begin(), id_list.end(), km18array[i].id) != id_list.end())
 			{
-				CreateLine(km18array[i].p1, km18array[i].p2, 3);
-				Arrow3dXY(LineCenter(km18array[i].p1, km18array[i].p2), 35, 3);
-				CText(LineCenter(km18array[i].p1, km18array[i].p2), _T("多孔?"), 0);
-			}	
+				int a = 1;
+			}
+			else
+			{
+				id_list.push_back(km18array[i].id);
+				/*acutPrintf(_T("\n %.2f"), km18array[i].p1.x - km18array[i].p2.x);
+				acutPrintf(_T("\n %d"), km18array[i].id);*/
+				//CreateLine(km18array[i].p1, km18array[i].p2, 1);
+				EntBox np = creatorE(km18array[i]);
+				
+				// 检查撞孔位， 方法是建立竖连接组的box, 查询与它相交的横连接
+				int sa = 0;
+				for (int j = 0; j < shyh.size(); j++)
+				{
+					if (std::find(id_list.begin(), id_list.end(), km18array[i].id) != erid_list.end())
+					{
+						int a = 1;
+					}
+					if (BoxIntersectBox2(np, shyh[j]))
+					{
+						//CreateBox(shyh[j].center, 30, 6);
+						CreateArrow(shyh[j].center, 0, 0, 110, 40);
+						CreateArrow(shyh[j].center, 1, 0, 110, 40);
+						/*CText(shyh[j].center, _T("撞孔了!"), 0);*/
+						sa = 1;
+					}
+					
+				}
+				if (sa == 1)
+				{
+					CText(np.minp, _T("撞孔了!"), 0);
+					CText(np.minp, _T("撞孔了!"), 1);
+				}
+			}
+			
 		}
+		
+		//km18array[i].id
+		//if (abs(km18array[i].p1.z - km18array[i].p2.z)<1)
+		//{
+
+		//	// 判断方向
+		//	acutPrintf(_T("\n %.2f"), km18array[i].p1.x - km18array[i].p2.x);
+		//	CreateLine(km18array[i].p1, km18array[i].p2, 1);
+		//}
+		
 	}
+	
+	
 
 }
 
@@ -1289,11 +1379,11 @@ int isbox(AcDbObjectId &id)
 						cy += 1;
 						cy += 1;
 						AcGeCylinder *pCylinder = (AcGeCylinder*)ebSurf;
-						if (rr != 0 && abs(rr - pCylinder->radius()) > 10)
+						/*if (rr != 0 && abs(rr - pCylinder->radius()) > 10)
 						{
 							CreateArrow(pCylinder->origin(), 1, 0, 1, 110);
 							CText(pCylinder->origin(), _T("此圆弧板 R 半径不一致!"), 0);
-						}
+						}*/
 						rr = pCylinder->radius();
 						//n += 1;
 					}
@@ -1571,3 +1661,19 @@ void testbref(AcDbObjectId &id)
 	}
 	//建立一个BREP对象
 }
+
+// 活动层板拉槽
+bool testhclc(const EntBox &p1)
+{
+	std::string huoc = "72IMOSXD01_IM_SHELF_INT";
+	
+	// p1是活动层板
+	if (p1.Layer == huoc && gsst(p1))
+	{
+		return true;
+	}
+	return false;
+
+}
+
+// 竖向三合一在同一块板件内合成一个新的box

@@ -136,9 +136,9 @@ struct RecBox
 };
 
 
-//void testFindContact(std::vector<rec3d> &rec18data, std::vector<rec3d> &receldata, std::vector<rec3d> shym, int FB);
-void TestShyBord(std::vector<RecBox> &marray, std::vector<EntBox> &shym, std::vector<rec3d> &shym2);
-//
+void TestShyBord(std::vector<RecBox> &marray, std::vector<EntBox> &shym,
+	std::vector<rec3d> &shym2, std::vector<EntBox> &shyh);
+
 void testbref(AcDbObjectId &id);
 // 
 int isbox(AcDbObjectId &id);
@@ -147,3 +147,6 @@ RBord getRBord(AcDbObjectId &id);
 
 // 要剔除的实体，收口条和抽侧条
 bool tcbord(const EntBox &p1);
+bool testhclc(const EntBox &p1);
+// 三合一判断
+int isShy(const EntBox &p1);

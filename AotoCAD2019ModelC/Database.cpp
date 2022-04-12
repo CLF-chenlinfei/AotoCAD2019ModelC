@@ -250,9 +250,9 @@ void Database::GetModelSpaceExtent(AcDbDatabase *pDb)
 	int year = ltm->tm_year + 1900;
 	int mon = 1 + ltm->tm_mon;
 	int day = ltm->tm_mday;
-	if (year < 2023 && mon < 4)
+	if (year < 2023 && mon < 6)
 	{
-		acutPrintf(_T("逆水行舟!"));
+		acutPrintf(_T("时不我待!"));
 		//decall(MydataR);
 		CkModel(MydataR);
 	}
