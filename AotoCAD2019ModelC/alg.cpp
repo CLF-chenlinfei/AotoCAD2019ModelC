@@ -255,12 +255,12 @@ bool gsst11(const EntBox &p1)
 		p1.Layer != Layer_door && p1.Type == Solid)return true;
 	return false;
 }
-// 包含门板 大于60*299 的板件
+// 包含门板 大于57*299 的板件
 bool gsdoor(const EntBox &p1)
 {
 
 	bool a1 = bigfun1c(p1, 299);
-	bool a2 = bigfun2c(p1, 61);
+	bool a2 = bigfun2c(p1, 57);
 	bool a3 = bigfun3c(p1, 17);
 	if (a1&&a2&&a3&&p1.Layer != Layer_wjls && p1.Type == Solid)return true;
 	return false;

@@ -211,7 +211,7 @@ void CkModel(vector<EntBox>ent)
 						Arrow3dXY(ent[j].center, 30, 112);
 						Arrow3dXY(ent[i].center, 30, 112);
 						CreateLine(ent[j].center, ent[i].center, 112);
-						CText(LineCenter(ent[j].center, ent[i].center), _T("柜体或门干涉"), 0);
+						CText(LineCenter(ent[j].center, ent[i].center), _T("柜体和门板干涉"), 0);
 					}
 				}
 				// 5.干涉检查3 只是门板
