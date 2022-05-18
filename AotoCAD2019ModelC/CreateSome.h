@@ -17,6 +17,9 @@ public:
 void CText(const AcGePoint3d& ptInsert, const ACHAR* text
 	, int fx, AcDbObjectId style = AcDbObjectId::kNull, double height = 30, double width = 5000);
 
+void CTextmin(const AcGePoint3d& ptInsert, const ACHAR* text
+	, int fx, AcDbObjectId style = AcDbObjectId::kNull, double height = 8, double width = 5000);
+
 void CreateBox(AcGePoint3d& cp, int le, int col);
 //»­¼ýÍ·
 void Arrow3dXY(AcGePoint3d& cp, int le, int col);

@@ -59,6 +59,48 @@ void CText(const AcGePoint3d& ptInsert, const ACHAR* text, int fx
 	Database::PostToModelSpace(pMText);
 }
 
+void CTextmin(const AcGePoint3d& ptInsert, const ACHAR* text, int fx
+	, AcDbObjectId style, double height, double width)
+{
+
+	//AcDbText  *pTextEntity = new AcDbText(insetPoint, text, AcDbObjectId::kNull, 100, 0);
+	AcDbMText *pMText = new AcDbMText();
+	//设置多行文字的特性
+	pMText->setTextStyle(style);
+	pMText->setContents(text);
+	pMText->setLocation(ptInsert);
+	pMText->setTextHeight(height);
+	pMText->setWidth(width);
+	pMText->setAttachment(AcDbMText::kBottomLeft);
+	pMText->setColorIndex(1);
+	//pTextEntity->setTextStyle();
+	//几何变换矩陈
+	AcGeMatrix3d xform;
+
+	if (fx == 1)
+	{
+		AcGeVector3d vec(0.0, 1.0, 0.0);
+		//设置需要进行的变换
+		xform.setToRotation(270.0*3.1415926535 *0.25, vec, ptInsert);
+		pMText->transformBy(xform);
+		AcGeVector3d vec2(1.0, 0.0, 0.0);
+		//设置需要进行的变换
+		xform.setToRotation(90.0*3.1415926535 *0.25, vec2, ptInsert);
+		pMText->transformBy(xform);
+
+	}
+	else
+	{
+		AcGeVector3d vec(1.0, 0.0, 0.0);
+		//设置需要进行的变换
+		xform.setToRotation(90.0*3.1415926535 *0.25, vec, ptInsert);
+		pMText->transformBy(xform);
+	}
+
+
+	Database::PostToModelSpace(pMText);
+}
+
 void CreateBox(AcGePoint3d& cp, int le, int col)
 {
 

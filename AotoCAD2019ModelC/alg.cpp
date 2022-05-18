@@ -276,6 +276,42 @@ bool isdoor(const EntBox &p1)
 	if (a1&&a2&&a3&&p1.Layer == Layer_door && p1.Type == Solid)return true;
 	return false;
 }
+
+// 判断是玻璃层板
+bool isblcb(const EntBox &p1)
+{
+	std::string Layerblcb = "72IMOSXD01_IM_SHELF_INT";
+	if (round(p1.maxp.z - p1.minp.z) == 8&&bigfun1c(p1,300)&&bigfun2c(p1,80))
+		return true;
+	return false;
+}
+
+// 特殊膨胀 膨胀场边 腐蚀短边
+
+EntBox tsExspansionEnt(const EntBox &p1, double greater)
+{
+	// 注意体积未膨胀，可以用大小点计算
+	EntBox newdata;
+	if ((p1.maxp.x - p1.minp.x) < (p1.maxp.y - p1.minp.y))
+	{
+		newdata.maxp = AcGePoint3d(p1.maxp.x - greater, p1.maxp.y + greater, p1.maxp.z);
+		newdata.minp = AcGePoint3d(p1.minp.x + greater, p1.minp.y - greater, p1.minp.z);
+	}
+	else
+	{
+		newdata.maxp = AcGePoint3d(p1.maxp.x + greater, p1.maxp.y - greater, p1.maxp.z);
+		newdata.minp = AcGePoint3d(p1.minp.x - greater, p1.minp.y + greater, p1.minp.z);
+	}
+	
+	newdata.center = p1.center;
+	newdata.id = p1.id;
+	newdata.Layer = p1.Layer;
+	newdata.Type = p1.Type;
+	newdata.volume = p1.volume;
+	return newdata;
+
+}
+
 // 膨胀实体
 EntBox ExspansionEnt(const EntBox &p1, double greater)
 {
@@ -729,6 +765,23 @@ int dec9mmBB(const EntBox &bb9, const EntBox &adlist)
 	return 0;
 }
 
+// 拉直器
+bool islzq(const EntBox &p1)
+{
+	// 高度差值在1500以上的才是拉直器
+	if (p1.maxp.z - p1.minp.z >= 1500)
+	{
+		if (round(p1.maxp.x - p1.minp.x) == 12 &&
+			round(p1.maxp.y - p1.minp.y) == 10)
+			return true;
+		if (round(p1.maxp.x - p1.minp.x) == 10 &&
+			round(p1.maxp.y - p1.minp.y) == 12)
+			return true;
+		return false;
+	}
+	return false;
+}
+
 // 判断板件
 /* 
 生成的
@@ -991,6 +1044,34 @@ void TestMjLs(std::vector<EntBox> &door, std::vector<AcGePoint3d> &ls, std::vect
 				
 		}
 	}
+	// 检查拉手与门铰同侧
+	// ===== 判断拉手点位中心 与门铰中心在同一块门板内的XY 距离 =====
+	if (!mj.empty() && !ls.empty() && !door.empty())
+	{
+		int n = 0;
+		for (int x = 0; x < door.size(); x++)
+		{
+			// 判断门铰在门板内
+			for (int xs = 0; xs < mj.size(); xs++)
+			{
+				// 判断拉手在门板内
+				for (int xl = 0; xl < ls.size(); xl++)
+				{
+					if (PointInBoxTangency(ls[xl], door[x])
+						&& PointInBoxTangency(mj[xs].p1.sx.center, door[x])
+						&& abs(ls[xl].x - mj[xs].p1.sx.center.x) < 100 
+						&& abs(ls[xl].y - mj[xs].p1.sx.center.y) < 100)
+					{
+						CreateArrow(ls[xl], 0, 0, 110, 100);
+						CreateArrow(ls[xl], 1, 0, 110, 100);
+						CText(ls[xl], _T("拉手位置开门方向错误！~"), 0);
+						CText(ls[xl], _T("拉手位置开门方向错误！~"), 1);
+					}
+				}
+			}
+			n++;
+		}
+	}
 }
 
 // 临时检查三合一;
@@ -1149,15 +1230,29 @@ bool tcbox(const EntBox &p1)
 // 创建三合一实体
 EntBox creatorE(const rec3d &p1)
 {
+	//CreateLine(p1.p1, p1.p2, 3);
 	EntBox np;
+	if (abs(p1.p1.x-p1.p2.x)<20)
+	{
+		np.minp.z = p1.p1.z - 10;
+		np.minp.x = p1.p1.x + 4;
+		np.minp.y = p1.p1.y + 50;
+		np.maxp.z = p1.p2.z + 10;
+		np.maxp.x = p1.p2.x - 4;
+		np.maxp.y = p1.p2.y - 50;
+	}
+	else
+	{
+		np.minp.z = p1.p1.z - 10;
+		np.minp.x = p1.p1.x + 50;
+		np.minp.y = p1.p1.y + 4;
+		np.maxp.z = p1.p2.z + 10;
+		np.maxp.x = p1.p2.x - 50;
+		np.maxp.y = p1.p2.y - 4;
+	}
 	np.id = p1.id;
 	// 大小点xy 规律是？ 小点xy变大
-	np.minp.z = p1.p1.z - 10;
-	np.minp.x = p1.p1.x + 4;
-	np.minp.y = p1.p1.y + 4;
-	np.maxp.z = p1.p2.z + 10;
-	np.maxp.x = p1.p2.x - 4;
-	np.maxp.y = p1.p2.y - 4;
+	
 	return np;
 }
 
@@ -1265,6 +1360,7 @@ void TestShyBord(std::vector<RecBox> &marray, std::vector<EntBox> &shym,
 				acutPrintf(_T("\n %d"), km18array[i].id);*/
 				//CreateLine(km18array[i].p1, km18array[i].p2, 1);
 				EntBox np = creatorE(km18array[i]);
+				//CreateLine(np.maxp, np.minp, 2);
 				
 				// 检查撞孔位， 方法是建立竖连接组的box, 查询与它相交的横连接
 				int sa = 0;

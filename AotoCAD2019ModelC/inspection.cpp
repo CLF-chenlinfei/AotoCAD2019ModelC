@@ -23,6 +23,8 @@ void CkModel(vector<EntBox>ent)
 	std::vector<rec3d> shym;
 	std::vector<EntBox> entshy; // 三合一实体
 	std::vector<RBord> RArray; // 圆弧板件板件比较
+	std::vector<EntBox> LzqArray; // 拉直器表
+	std::vector<EntBox> LsArray; // 拉手孔位表
 
 	// 新三合一检测
 	vector<RecBox> Marray;
@@ -55,7 +57,9 @@ void CkModel(vector<EntBox>ent)
 			}
 
 			// 这个是获取实体
-			if (ent[i].Layer != Layer_door && ((ent[i].volume > 999 && ent[i].volume < 1001) || (ent[i].volume > 299 && ent[i].volume < 301)) && ent[i].Type == Solid)
+			if (ent[i].Layer != Layer_door && 
+				((ent[i].volume > 999 && ent[i].volume < 1001) || 
+				(ent[i].volume > 299 && ent[i].volume < 301)) && ent[i].Type == Solid)
 				entshy.push_back(ent[i]);
 			// 这个是获三合一取面
 			if (ent[i].Layer != Layer_door && ((ent[i].volume > 1855 && ent[i].volume < 1857) || (ent[i].volume > 299 && ent[i].volume < 301)) &&ent[i].Type == Solid)
@@ -154,9 +158,67 @@ void CkModel(vector<EntBox>ent)
 				RArray.push_back(getRBord(ent[i].id));
 
 			}
+			// 判断是玻璃层板
+			bool bl = isblcb(ent[i]);
+			bool blz = false;
+			bool bly = false;
+			/*if (bl)
+			{
+				EntBox npp1 = tsExspansionEnt(ent[i], 5);
+				CreateLine(npp1.maxp, npp1.minp, 3);
+			}*/
+			// ========= 判断是拉直器 =========
 			
+			if (islzq(ent[i]))
+			{
+				LzqArray.push_back(ent[i]);
+			}
+			// ========= 判断是三合一帽 =========
+			bool isshym1 = round(ent[i].volume) == 3150
+				&& round(ent[i].maxp.z - ent[i].minp.z) == 14;
+			int duocenb = 0;
+			
+			// ========= 判断是锁 =========
+			bool suo1 = round(ent[i].volume) == 58050 && ent[i].Layer=="72IMOSXD01_IM_PULL";
+			int sn_number = 0;
+			
+
 			for (int j = 0; j < ent.size(); j++)
 			{
+				// 检查是否撞琐
+				if (suo1)
+				{
+					// 统计和锁相交的实体个数
+					if (BoxIntersectBox2(ent[i],ent[j]))
+					{
+						sn_number += 1;
+					}
+				}
+				// 检查孔位重叠
+				bool isshym2 = round(ent[j].volume) == 3150 &&
+					round(ent[j].maxp.z - ent[j].minp.z)==14;
+				if (isshym2&&isshym1)
+				{
+					
+					if (abs(ent[i].maxp.z - ent[j].minp.z) < 0.1 ||
+						abs(ent[i].minp.z - ent[j].maxp.z) < 0.1)
+					{
+						if (abs(ent[i].center.x - ent[j].center.x) < 0.1 ||
+							abs(ent[i].center.y - ent[j].center.y) < 0.1)
+						{
+							CreateLine(ent[i].center, ent[j].center, 3);
+							duocenb = 1;
+							//CText(ent[j].center, _T("多打孔层板!"), 0);
+						}
+					}
+				}
+				// 检查玻璃层板
+				if (bl)
+				{
+					EntBox npp1 = tsExspansionEnt(ent[i], 5);
+					if (PointInBoxTangency(npp1.maxp, ent[j])) blz = true;
+					if (PointInBoxTangency(npp1.minp, ent[j])) bly = true;
+				}
 				// 活动层板拉槽
 				if (bb9mm&&testhclc(ent[j]))
 				{
@@ -298,7 +360,23 @@ void CkModel(vector<EntBox>ent)
 					if (aa == 2) on_offa = true;
 				}
 			}
+
+			// 统计锁相交个数
+			if (sn_number>4)
+			{
+				CreateArrow(ent[i].center, 0, 0, 110, 100);
+				CreateArrow(ent[i].center, 1, 0, 110, 100);
+				CText(ent[i].center, _T("撞锁!"), 0);
+				CText(ent[i].center, _T("撞锁!"), 1);
+			}
 			
+			// 画错多层板
+			if (duocenb!=0)
+			{
+				//CText(ent[i].center, _T("多层板，多孔位!"), 0);
+				CTextmin(ent[i].center, _T("多层板，多孔位!"), 0);
+				CTextmin(ent[i].center, _T("多层板，多孔位!"), 1);
+			}
 			// 门铰错误 以及生成门铰带方向与最小距离
 			if (bmj)
 			{
@@ -337,7 +415,11 @@ void CkModel(vector<EntBox>ent)
 			// 生成合成门板集合
 			if (bigfun2c(newi) && iisdoor&&!bmj)ADDdoorArray.push_back(newi);
 			// 拉手集合生成
-			if (isLskwf(ent[i]))DrLsArry.push_back(ent[i].center);
+			if (isLskwf(ent[i]))
+			{
+				DrLsArry.push_back(ent[i].center);
+				LsArray.push_back(ent[i]);
+			}
 			// 画出9毫米背板未入槽
 			if (bb9mm)
 			{
@@ -370,6 +452,17 @@ void CkModel(vector<EntBox>ent)
 				}
 				
 			}
+			// 检查玻璃层板 尺寸
+			if (bl)
+			{
+				if (!blz || !bly)
+				{
+					CreateArrow(ent[i].center, ifx, 0, 110, 100);
+					CreateArrow(ent[i].center, ifx, 1, 110, 100);
+					CText(ent[i].center, _T("玻璃层板尺寸错误!"), ifx);
+				}
+			}
+			
 			// 12.检查门铰数量
 			// 291-900   x2
 			// 901-1600  x3
@@ -442,6 +535,52 @@ void CkModel(vector<EntBox>ent)
 		}
 	}
 
+	// 判断拉直器与门板拉手孔位相撞
+	if (!LsArray.empty()&&!LzqArray.empty())
+	{
+		
+		for (int i = 0; i < LsArray.size(); i++)
+		{
+			for (int j = 0; j < LzqArray.size(); j++)
+			{
+				if (BoxIntersectBox2(ExspansionEnt(LsArray[i], 4), LzqArray[j]))
+				{
+					
+					CreateArrow(LsArray[i].center, 0, 0, 110, 100);
+					CreateArrow(LsArray[i].center, 1, 0, 110, 100);
+					CText(LsArray[i].center, _T("拉手与拉直器相撞!"), 0);
+				}
+			}
+		}
+	}
+
+	// ************************** 判断孔位是否不再板件内 ************************** 
+	if (!entshy.empty())
+	{
+		for (int i = 0; i < entshy.size(); i++)
+		{
+			
+			for (int x = 0; x < ent.size(); x++)
+			{
+				// 找到点中心在box 内就跳出循环
+				if (PointInBoxTangency(entshy[i].center, ent[x])&&
+					entshy[i].id!=ent[x].id)
+				{
+					break;
+				}
+				// 到最后一个还没找到就画出来
+				if (x==ent.size()-1 && entshy[i].volume > 500)
+				{
+					CreateArrow(entshy[i].center, 0, 0, 110, 100);
+					CreateArrow(entshy[i].center, 1, 0, 110, 100);
+					CText(entshy[i].center, _T("空孔!"), 0);
+					CText(entshy[i].center, _T("空孔!"), 1);
+				}
+			}
+		}
+	}
+
+	// ====--====
 	if (!entshy.empty())
 	{
 		// 
@@ -454,5 +593,6 @@ void CkModel(vector<EntBox>ent)
 			testbref(ent[i].id);
 		}
 	}*/
+	//CTextmin(AcGePoint3d(0,0,0), _T("多层板，多孔位!"), 0);
 	acutPrintf(_T("\n Hello LF 计算量:%d !"), ent.size()*ent.size());
 }

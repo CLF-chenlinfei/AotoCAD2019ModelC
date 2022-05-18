@@ -134,7 +134,8 @@ struct RecBox
 	rec3d me18a;
 	rec3d me18b;
 };
-
+// 拉直器
+bool islzq(const EntBox &p1);
 
 void TestShyBord(std::vector<RecBox> &marray, std::vector<EntBox> &shym,
 	std::vector<rec3d> &shym2, std::vector<EntBox> &shyh);
@@ -150,3 +151,6 @@ bool tcbord(const EntBox &p1);
 bool testhclc(const EntBox &p1);
 // 三合一判断
 int isShy(const EntBox &p1);
+// 判断是玻璃层板
+bool isblcb(const EntBox &p1);
+EntBox tsExspansionEnt(const EntBox &p1, double greater);
